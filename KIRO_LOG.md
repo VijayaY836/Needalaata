@@ -9,3 +9,10 @@
 - Kiro consulted Context7 for the real MediaPipe HandLandmarker API before writing the spec (driven by our tech.md rule: "never invent APIs")
 - Tasks generated: 18 task groups, ordered with a dependency graph; property tests placed next to the code they validate
 - Next: implement tasks 1.1 → 8.1, then preview page (16.1) to visually verify the shadow early
+
+## Nov 7 – Feature extractor + property-based tests
+- Tasks 9.1–9.3: feature extractor with 10 fast-check properties (100 runs each), all passing
+- Property 2 generator deliberately includes identical-wrist-x and identical-x+y pairs to exercise the tiebreaker
+- Strict TypeScript: zero errors
+
+![First shadow – rabbit](docs/screenshots/first-shadow.png)
