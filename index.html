@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shadow Theatre</title>
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #0a0a0c; color: #d8c8b0; font-family: system-ui, sans-serif; }
+      #app { position: relative; display: flex; flex-direction: column; align-items: center; padding: 8px; }
+      #preview { display: block; width: 100%; max-width: 1280px; height: auto; }
+      .on-device-notice { margin: 4px 0 8px; font-size: 13px; opacity: 0.8; }
+      .camera-message { margin: 12px 0; padding: 12px 16px; border: 1px solid #ffb36b; color: #ffb36b; }
+    </style>
   </head>
   <body>
     <div id="app"></div>

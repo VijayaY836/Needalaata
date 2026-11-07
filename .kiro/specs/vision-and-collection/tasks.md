@@ -253,8 +253,8 @@ graph TD
     - Integrate the pipeline, FeatureExtractor, MaskGenerator, CaptureController, SampleStore, and Exporter so capture → persist → counts/export flow end to end
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 9.1, 9.2, 13.1, 13.2, 13.3, 14.1, 14.2, 14.3, 14.4, 15.4_
 
-- [ ] 16. Vision preview page wiring
-  - [ ] 16.1 Wire the main vision preview page
+- [x] 16. Vision preview page wiring
+  - [x] 16.1 Wire the main vision preview page
     - Create `src/main.ts` and root `index.html` content: start the camera, run the VisionPipeline, render the SilhouetteRenderer onto the near-black canvas, attach the FPS overlay, and show the on-device processing notice
     - _Requirements: 2.5, 4.1, 4.2, 6.1, 7.1, 7.2, 7.3, 7.4_
 

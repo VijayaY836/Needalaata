@@ -169,6 +169,25 @@
         "chatSessionId": "sess_59d5f6b7-aa83-40bb-bbca-4a4588fd97cd",
         "timestamp": 1794059708472
       }
+    ],
+    "16.1 Wire the main vision preview page": [
+      {
+        "executionId": "3c68b326-fad2-4936-a329-e62c4ab39a1c",
+        "chatSessionId": "sess_afda2e57-b732-4eed-88c8-e6ecdb0e1f26",
+        "timestamp": 1794059881185
+      },
+      {
+        "executionId": "3c68b326-fad2-4936-a329-e62c4ab39a1c",
+        "chatSessionId": "sess_afda2e57-b732-4eed-88c8-e6ecdb0e1f26",
+        "timestamp": 1794060015470
+      }
+    ],
+    "16. Vision preview page wiring": [
+      {
+        "executionId": "3c68b326-fad2-4936-a329-e62c4ab39a1c",
+        "chatSessionId": "sess_afda2e57-b732-4eed-88c8-e6ecdb0e1f26",
+        "timestamp": 1794060015551
+      }
     ]
   }
 }
