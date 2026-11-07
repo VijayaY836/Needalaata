@@ -177,13 +177,13 @@ graph TD
     - Create `src/vision/fps-overlay.ts`: start hidden, toggle on the D key, draw current FPS in the configured corner/style, refresh at `config.uiRefreshIntervalMs`
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 9. Feature extraction core
-  - [ ] 9.1 Implement FeatureExtractor
+- [x] 9. Feature extraction core
+  - [x] 9.1 Implement FeatureExtractor
     - Create `tools/collect/feature-extractor.ts`: aspect-correct landmarks (`xc = x*fw`, `yc = y*fh`, `zc = z*fw`); `Hand_Scale` = aspect-corrected distance from landmark 0 to landmark 9; normalized landmarks = wrist-relative / Hand_Scale; store raw landmarks as mirrored display-space `[0,1]`
     - Slot assignment: one hand → slot 0, slot 1 absent/zero-filled; two hands → smaller wrist.x → slot 0 with (y, then score) tiebreaker chain; inter-hand wrist offset = (slot1 − slot0 wrist)/mean Hand_Scale, zero-filled if a slot is absent; `handCount` = present slots; output always length-2 slots (fixed-length)
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 18.3, 18.4, 18.5, 18.8_
 
-  - [ ]* 9.2 Write property tests for slot assignment and raw/zero-fill invariants
+  - [x] 9.2 Write property tests for slot assignment and raw/zero-fill invariants
     - **Property 1: Single-hand goes to slot 0** — Validates: Requirements 11.1, 18.8
     - **Property 2: Two-hand slot assignment by wrist x with deterministic tiebreak** (generators include identical wrist x, and identical wrist x+y) — Validates: Requirements 11.2
     - **Property 3: Slot assignment independent of detection order** — Validates: Requirements 18.5
@@ -193,7 +193,7 @@ graph TD
     - Use fast-check, ≥100 iterations each, tagged `// Feature: vision-and-collection, Property N: ...`
     - _Requirements: 11.1, 11.2, 11.3, 11.6, 18.3, 18.4, 18.5, 18.8_
 
-  - [ ]* 9.3 Write property tests for normalization and inter-hand invariants
+  - [x] 9.3 Write property tests for normalization and inter-hand invariants
     - **Property 5: Normalized landmarks are translation invariant** — Validates: Requirements 18.1
     - **Property 6: Normalized landmarks are scale invariant** — Validates: Requirements 18.2
     - **Property 7: Inter-hand features translation and scale invariant** — Validates: Requirements 18.6, 18.7
@@ -201,7 +201,7 @@ graph TD
     - Use fast-check, ≥100 iterations each, tagged `// Feature: vision-and-collection, Property N: ...`
     - _Requirements: 18.1, 18.2, 18.6, 18.7, 11.7, 11.8_
 
-- [ ] 10. Checkpoint - core feature logic verified
+- [x] 10. Checkpoint - core feature logic verified
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 11. Shadow mask generation

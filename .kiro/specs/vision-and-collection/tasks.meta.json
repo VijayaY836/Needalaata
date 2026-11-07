@@ -1,5 +1,10 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "9.2 Write property tests for slot assignment and raw/zero-fill invariants": {
+      "status": "passed",
+      "lastRunTimestamp": 1794060963185
+    }
+  },
   "executionHistory": {
     "1.1 Initialize Vite + TypeScript strict project with folder structure": [
       {
@@ -187,6 +192,61 @@
         "executionId": "3c68b326-fad2-4936-a329-e62c4ab39a1c",
         "chatSessionId": "sess_afda2e57-b732-4eed-88c8-e6ecdb0e1f26",
         "timestamp": 1794060015551
+      }
+    ],
+    "9.1 Implement FeatureExtractor": [
+      {
+        "executionId": "a6534580-b2a5-4262-93c0-a54ac5bef973",
+        "chatSessionId": "sess_f5672e9e-0274-4532-b67b-99958a47e281",
+        "timestamp": 1794060790346
+      },
+      {
+        "executionId": "a6534580-b2a5-4262-93c0-a54ac5bef973",
+        "chatSessionId": "sess_f5672e9e-0274-4532-b67b-99958a47e281",
+        "timestamp": 1794060848077
+      }
+    ],
+    "9. Feature extraction core": [
+      {
+        "executionId": "a6534580-b2a5-4262-93c0-a54ac5bef973",
+        "chatSessionId": "sess_f5672e9e-0274-4532-b67b-99958a47e281",
+        "timestamp": 1794060848151
+      }
+    ],
+    "9.2 Write property tests for slot assignment and raw/zero-fill invariants": [
+      {
+        "executionId": "71fd9311-020d-4d93-a0b0-d9eb788e99af",
+        "chatSessionId": "sess_449c21a0-c56c-4c69-a0cf-9821f8269708",
+        "timestamp": 1794060890637
+      },
+      {
+        "executionId": "71fd9311-020d-4d93-a0b0-d9eb788e99af",
+        "chatSessionId": "sess_449c21a0-c56c-4c69-a0cf-9821f8269708",
+        "timestamp": 1794060972176
+      }
+    ],
+    "9.3 Write property tests for normalization and inter-hand invariants": [
+      {
+        "executionId": "483d4f2b-e5e8-41c2-9e62-81d31f76e7ae",
+        "chatSessionId": "sess_c2d828f4-ba05-4df2-99c9-419c3349ed07",
+        "timestamp": 1794061005037
+      },
+      {
+        "executionId": "483d4f2b-e5e8-41c2-9e62-81d31f76e7ae",
+        "chatSessionId": "sess_c2d828f4-ba05-4df2-99c9-419c3349ed07",
+        "timestamp": 1794061132571
+      }
+    ],
+    "10. Checkpoint - core feature logic verified": [
+      {
+        "executionId": "69a7c33e-e88a-4e8f-8ef7-e24aa78b120b",
+        "chatSessionId": "sess_e6b66acc-a799-4332-b47c-efdeaf9b92cb",
+        "timestamp": 1794061178623
+      },
+      {
+        "executionId": "69a7c33e-e88a-4e8f-8ef7-e24aa78b120b",
+        "chatSessionId": "sess_e6b66acc-a799-4332-b47c-efdeaf9b92cb",
+        "timestamp": 1794061241420
       }
     ]
   }
