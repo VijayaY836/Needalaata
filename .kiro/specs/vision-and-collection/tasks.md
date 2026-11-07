@@ -93,7 +93,7 @@ graph TD
 ## Tasks
 
 - [ ] 1. Project scaffolding and asset setup
-  - [ ] 1.1 Initialize Vite + TypeScript strict project with folder structure
+  - [x] 1.1 Initialize Vite + TypeScript strict project with folder structure
     - Create `package.json`, `tsconfig.json` with `"strict": true`, root `index.html`
     - Create directories `src/vision/`, `src/config.ts` placeholder, `tools/collect/`
     - Ensure the vision module folder contains no puppet/game-flow logic (structure boundary)
@@ -109,12 +109,12 @@ graph TD
     - Add `vitest` and `fast-check` as dev dependencies; add a `test` script using `vitest --run`
     - _Requirements: 1.2, Design "Testing Strategy"_
 
-  - [ ] 1.4 Add asset setup script wired to postinstall
+  - [x] 1.4 Add asset setup script wired to postinstall
     - Create `scripts/setup-assets.mjs` that copies `node_modules/@mediapipe/tasks-vision/wasm` to `public/wasm` and downloads `hand_landmarker.task` into `public/models/` only if missing (exit non-zero on model fetch failure)
     - Wire `"postinstall": "node scripts/setup-assets.mjs"` in `package.json`
     - _Requirements: 3.1, 3.2, 3.3, Design "Asset setup script"_
 
-  - [ ]* 1.5 Document asset setup in README
+  - [x] 1.5 Document asset setup in README
     - Describe that `npm install` triggers `postinstall` → copies WASM to `public/wasm` and downloads the model to `public/models`, keeping assets on the app's own origin
     - _Requirements: 3.1, 3.3, Design "Asset setup (README note)"_
 

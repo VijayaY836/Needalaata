@@ -1,0 +1,41 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Initialize Vite + TypeScript strict project with folder structure": [
+      {
+        "executionId": "263950b7-207e-4337-a158-7c46f18c2d1c",
+        "chatSessionId": "sess_ee11f533-bf73-49ac-ad10-885322aad41a",
+        "timestamp": 1794057885469
+      },
+      {
+        "executionId": "263950b7-207e-4337-a158-7c46f18c2d1c",
+        "chatSessionId": "sess_ee11f533-bf73-49ac-ad10-885322aad41a",
+        "timestamp": 1794058022683
+      }
+    ],
+    "1.4 Add asset setup script wired to postinstall": [
+      {
+        "executionId": "fd99f926-858c-4921-b4a6-cf28a957abc1",
+        "chatSessionId": "sess_0260ec09-9096-4561-a111-96e635bd2f6a",
+        "timestamp": 1794058268396
+      },
+      {
+        "executionId": "fd99f926-858c-4921-b4a6-cf28a957abc1",
+        "chatSessionId": "sess_0260ec09-9096-4561-a111-96e635bd2f6a",
+        "timestamp": 1794058336478
+      }
+    ],
+    "1.5 Document asset setup in README": [
+      {
+        "executionId": "09cd1dec-c4a1-41fb-97fb-85e6cf2934f6",
+        "chatSessionId": "sess_6f16f6f6-e9c4-43d8-9dc7-07633fee7674",
+        "timestamp": 1794058366307
+      },
+      {
+        "executionId": "09cd1dec-c4a1-41fb-97fb-85e6cf2934f6",
+        "chatSessionId": "sess_6f16f6f6-e9c4-43d8-9dc7-07633fee7674",
+        "timestamp": 1794058390459
+      }
+    ]
+  }
+}
