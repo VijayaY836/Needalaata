@@ -74,6 +74,101 @@
         "chatSessionId": "sess_66638084-3ff4-478f-8757-12c645327d5e",
         "timestamp": 1794058590292
       }
+    ],
+    "4.1 Implement camera capture and mirroring": [
+      {
+        "executionId": "1e3adae9-e358-4109-8b45-0aebe73a1264",
+        "chatSessionId": "sess_f6b49262-da2d-462f-8e0c-c5068c8811b8",
+        "timestamp": 1794058764963
+      },
+      {
+        "executionId": "1e3adae9-e358-4109-8b45-0aebe73a1264",
+        "chatSessionId": "sess_f6b49262-da2d-462f-8e0c-c5068c8811b8",
+        "timestamp": 1794058838771
+      }
+    ],
+    "4. Camera module": [
+      {
+        "executionId": "1e3adae9-e358-4109-8b45-0aebe73a1264",
+        "chatSessionId": "sess_f6b49262-da2d-462f-8e0c-c5068c8811b8",
+        "timestamp": 1794058838810
+      }
+    ],
+    "5.1 Implement HandLandmarker initialization with GPU/CPU fallback": [
+      {
+        "executionId": "6b3375a3-954c-4885-90ef-fd68410602f8",
+        "chatSessionId": "sess_1256dc2f-664e-424d-b653-689c2dd0b4f7",
+        "timestamp": 1794058864983
+      },
+      {
+        "executionId": "6b3375a3-954c-4885-90ef-fd68410602f8",
+        "chatSessionId": "sess_1256dc2f-664e-424d-b653-689c2dd0b4f7",
+        "timestamp": 1794059041960
+      }
+    ],
+    "5. HandLandmarker wrapper": [
+      {
+        "executionId": "6b3375a3-954c-4885-90ef-fd68410602f8",
+        "chatSessionId": "sess_1256dc2f-664e-424d-b653-689c2dd0b4f7",
+        "timestamp": 1794059042019
+      }
+    ],
+    "6.1 Implement VisionPipeline per-frame loop": [
+      {
+        "executionId": "eff6d82e-a7f4-408a-acb4-c40f2bd68066",
+        "chatSessionId": "sess_19da7009-1f63-4c75-9108-277dca514356",
+        "timestamp": 1794059067772
+      },
+      {
+        "executionId": "eff6d82e-a7f4-408a-acb4-c40f2bd68066",
+        "chatSessionId": "sess_19da7009-1f63-4c75-9108-277dca514356",
+        "timestamp": 1794059340369
+      }
+    ],
+    "6. Vision pipeline": [
+      {
+        "executionId": "eff6d82e-a7f4-408a-acb4-c40f2bd68066",
+        "chatSessionId": "sess_19da7009-1f63-4c75-9108-277dca514356",
+        "timestamp": 1794059340428
+      }
+    ],
+    "7.1 Implement SilhouetteRenderer": [
+      {
+        "executionId": "4146eb9f-c744-44e2-bbf0-7373134d5abb",
+        "chatSessionId": "sess_05782351-40c1-4c73-b1fe-f4a914be73f7",
+        "timestamp": 1794059358265
+      },
+      {
+        "executionId": "4146eb9f-c744-44e2-bbf0-7373134d5abb",
+        "chatSessionId": "sess_05782351-40c1-4c73-b1fe-f4a914be73f7",
+        "timestamp": 1794059560283
+      }
+    ],
+    "7. Silhouette renderer": [
+      {
+        "executionId": "4146eb9f-c744-44e2-bbf0-7373134d5abb",
+        "chatSessionId": "sess_05782351-40c1-4c73-b1fe-f4a914be73f7",
+        "timestamp": 1794059560368
+      }
+    ],
+    "8.1 Implement FPS overlay with D-key toggle": [
+      {
+        "executionId": "1788070f-8a04-4c7e-ae92-22f0a88602d5",
+        "chatSessionId": "sess_59d5f6b7-aa83-40bb-bbca-4a4588fd97cd",
+        "timestamp": 1794059613886
+      },
+      {
+        "executionId": "1788070f-8a04-4c7e-ae92-22f0a88602d5",
+        "chatSessionId": "sess_59d5f6b7-aa83-40bb-bbca-4a4588fd97cd",
+        "timestamp": 1794059708384
+      }
+    ],
+    "8. FPS debug overlay": [
+      {
+        "executionId": "1788070f-8a04-4c7e-ae92-22f0a88602d5",
+        "chatSessionId": "sess_59d5f6b7-aa83-40bb-bbca-4a4588fd97cd",
+        "timestamp": 1794059708472
+      }
     ]
   }
 }

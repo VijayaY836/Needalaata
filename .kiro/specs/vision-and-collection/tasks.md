@@ -130,8 +130,8 @@ graph TD
     - Document the Display_Coordinate_Space contract (mirrored `[0,1]`, origin top-left)
     - _Requirements: 5.6, 11.1–11.10, 16.2, 16.3, 18.3, Design "Data Models"_
 
-- [ ] 4. Camera module
-  - [ ] 4.1 Implement camera capture and mirroring
+- [x] 4. Camera module
+  - [x] 4.1 Implement camera capture and mirroring
     - Create `src/vision/camera.ts` with `start(resolution)`/`stop()`; request `getUserMedia` at `config.cameraResolution` and attach the stream to a playing `<video>`
     - Mirror the `<video>` visually with CSS `transform: scaleX(-1)` (the preview canvas is NOT flipped)
     - Surface "camera access is required" on permission denial and halt startup; surface "no camera was found" when no device exists; show the on-device processing notice
@@ -141,8 +141,8 @@ graph TD
     - Test granted / denied / no-device paths surface the correct messages
     - _Requirements: 2.2, 2.3, 2.4_
 
-- [ ] 5. HandLandmarker wrapper
-  - [ ] 5.1 Implement HandLandmarker initialization with GPU/CPU fallback
+- [x] 5. HandLandmarker wrapper
+  - [x] 5.1 Implement HandLandmarker initialization with GPU/CPU fallback
     - Create `src/vision/hand-landmarker.ts`: resolve the WASM fileset from `config.wasmPath` via `FilesetResolver.forVisionTasks`, then `HandLandmarker.createFromOptions` with local `modelAssetPath`, `numHands = 2`, `runningMode = "VIDEO"`
     - Attempt the GPU delegate first, retry with CPU on failure, surface "hand tracking could not start" if both fail; expose `detect(video, ts)` and `isReady()`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
@@ -151,8 +151,8 @@ graph TD
     - Test GPU-preferred, CPU fallback, and both-fail reporting
     - _Requirements: 3.4, 3.5, 3.6_
 
-- [ ] 6. Vision pipeline
-  - [ ] 6.1 Implement VisionPipeline per-frame loop
+- [x] 6. Vision pipeline
+  - [x] 6.1 Implement VisionPipeline per-frame loop
     - Create `src/vision/pipeline.ts`: rAF loop computing ONE `performance.now()` timestamp per tick, passed to both `detectForVideo` and the emitted `FrameResult.timestamp`
     - Guard reprocessing via `video.currentTime` unchanged; apply the single mirror `x' = 1 - x`; emit `FrameResult` with `frameWidth`/`frameHeight`; emit empty hands when none detected; provide `onFrame` subscribe returning an unsubscribe
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
@@ -161,8 +161,8 @@ graph TD
     - Verify a landmark mirrored to `x = 0.2` maps to the left of the preview and that the same timestamp is emitted as was passed to detect
     - _Requirements: 4.2, 5.1_
 
-- [ ] 7. Silhouette renderer
-  - [ ] 7.1 Implement SilhouetteRenderer
+- [x] 7. Silhouette renderer
+  - [x] 7.1 Implement SilhouetteRenderer
     - Create `src/vision/silhouette-renderer.ts` with `render(frame, options)` and `renderToCanvas(frame, options)` taking `RenderOptions {color, background, blurRadius}`
     - Fill background; build each hand from thick rounded finger-bone strokes plus a filled palm polygon; `strokeWidth = config.strokeThicknessScale * handScalePx`; draw already-mirrored landmarks with NO extra canvas flip; no skeleton lines or joint dots
     - Blur via offscreen canvas scaled by `config.silhouetteDownscale` using `ctx.filter = blur(...)` with downscale→upscale fallback when `ctx.filter` is unavailable; background-only when no hands
@@ -172,8 +172,8 @@ graph TD
     - Confirm a mirrored `x = 0.2` landmark renders on the left side and no additional canvas flip is applied
     - _Requirements: 4.2_
 
-- [ ] 8. FPS debug overlay
-  - [ ] 8.1 Implement FPS overlay with D-key toggle
+- [x] 8. FPS debug overlay
+  - [x] 8.1 Implement FPS overlay with D-key toggle
     - Create `src/vision/fps-overlay.ts`: start hidden, toggle on the D key, draw current FPS in the configured corner/style, refresh at `config.uiRefreshIntervalMs`
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
