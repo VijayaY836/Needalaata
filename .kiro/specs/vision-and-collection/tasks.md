@@ -118,14 +118,14 @@ graph TD
     - Describe that `npm install` triggers `postinstall` → copies WASM to `public/wasm` and downloads the model to `public/models`, keeping assets on the app's own origin
     - _Requirements: 3.1, 3.3, Design "Asset setup (README note)"_
 
-- [ ] 2. Centralized configuration
-  - [ ] 2.1 Implement Config interface and default config object
+- [x] 2. Centralized configuration
+  - [x] 2.1 Implement Config interface and default config object
     - Define the `Config` interface in `src/config.ts`
     - Export a default `config` with `cameraResolution`, `silhouetteBlurRadius`, `backgroundColor`, `warmSilhouetteColor`, `strokeThicknessScale = 0.25`, `silhouetteDownscale = 0.5`, `countdownDurationMs`, `burstDurationMs`, `captureRatePerSecond = 10`, `uiRefreshIntervalMs`, `fpsOverlayStyle`, `maskSize = {96,96}`, `maskPaddingScale`, `wasmPath = "/wasm"`, `modelAssetPath = "/models/hand_landmarker.task"`
     - _Requirements: 17.1, 17.2, 17.3, 17.4_
 
-- [ ] 3. Shared types
-  - [ ] 3.1 Define shared data model types
+- [x] 3. Shared types
+  - [x] 3.1 Define shared data model types
     - Create `src/vision/types.ts` (and a collect types file as needed) with `Landmark`, `HandObservation`, `FrameResult` (including `frameWidth`/`frameHeight`), `HandSlot`, `Sample` (`id` as UUID), `InterHandFeatures`, `ExtractedFeatures`, `ExportMetadata`, `ExportDocument`, and the `Label` union (`rabbit | lion | bird | snake | crocodile | demon | none`)
     - Document the Display_Coordinate_Space contract (mirrored `[0,1]`, origin top-left)
     - _Requirements: 5.6, 11.1–11.10, 16.2, 16.3, 18.3, Design "Data Models"_
