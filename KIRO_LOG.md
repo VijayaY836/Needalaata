@@ -49,3 +49,52 @@
 
 ### Next (Nov 8)
 - Tasks 11.1 → 15.1: mask generator, sample store, exporter, capture controller, collector page
+
+## Nov 8 – Spec 1 implementation (Day 3) – collector complete
+
+### Tasks 11.1–11.2: Mask generator + Property 11
+- 96×96 single-channel shadow mask (0 = background, 255 = shadow), raw uint8 → base64
+- Reuses the SAME SilhouetteRenderer as the preview, rendered white-on-black, so the CNN
+  trains on exactly the geometry users see (no duplicated drawing code)
+- Crops to the hands' bounding box + padding scaled to hand size, centred, aspect preserved; no hands → blank mask
+- Review caught gaps the green tests hid; sent back to Kiro:
+  - Property 11 was testing helpers inside the test file → moved into production
+    `encodeMask` / `decodeMask`, which the exporter now reuses
+  - Added edge masks (all-0, all-255, single lit pixel at index 0 and 9215)
+  - Padding now covers the silhouette's half stroke width (0.125 × hand scale) so fingertips never clip
+  - New assertion: non-null crop ⇒ non-empty mask, plus an asymmetric-hand example, so a double-mirror bug fails loudly
+  - `maskBlurRadius: 0` → crisp training masks; preview keeps its warm blur
+- Lesson: a passing property is only as good as the code it actually calls
+
+### Task 12.1: Sample store
+- IndexedDB persistence; undo removes the latest-timestamp burst; clear-all asks for confirmation
+
+### Tasks 13.1–13.2: Exporter + Property 12
+- Versioned JSON export with metadata; uses the shared mask codec
+- Export round-trip property passing
+
+### Task 14.1: Capture controller
+- Fixed 4 s bursts at 10 samples/sec (40 per burst), tagged with sessionId + burstId
+- Recording disabled until the tracker is ready
+
+### Task 15.1: Collector page
+- Contributor name (required), 7-label picker with live counts, reference illustration + hint per shape
+- Live 96×96 mask thumbnail, Record / Undo last burst / Clear all / Export
+
+### Task 18: Final checkpoint
+- `tsc --noEmit` clean · 12/12 correctness properties passing (100 runs each)
+- Live test passed: name gate, thumbnail centred with fingertips intact, correct mirroring,
+  mask size stable at any distance, two hands combine, 40 samples/burst, `none` records
+  without hands, undo removes only the last burst, data survives reload, export has all
+  fields, clear-all confirms, no console errors
+
+![Collector – rabbit shadow, live mask, mid-recording](docs/screenshots/collector.png)
+
+### Other
+- Requested the 4,000 Kiro credits via the Devpost Resources form
+- Considering Frankenstein as the primary category (ancient craft stitched to ML)
+
+### Next (Nov 9–10)
+- Recording sessions with 3–5 people, 250+ samples per label; export after each session
+- Optional: PBT mutation check (break the slot tiebreaker, screenshot fast-check catching it)
+- Spec 2: `classifier`
