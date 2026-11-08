@@ -3,6 +3,8 @@
 export interface Config {
   cameraResolution: { width: number; height: number };
   silhouetteBlurRadius: number;
+  /** Blur radius (px) for the mask render; 0 keeps masks crisp and scale-consistent. */
+  maskBlurRadius: number;
   /** Near-black background color. */
   backgroundColor: string;
   warmSilhouetteColor: string;
@@ -28,6 +30,7 @@ export interface Config {
 export const config: Config = {
   cameraResolution: { width: 1280, height: 720 },
   silhouetteBlurRadius: 12,
+  maskBlurRadius: 0,
   backgroundColor: '#0a0a0c',
   warmSilhouetteColor: '#ffb36b',
   strokeThicknessScale: 0.25,

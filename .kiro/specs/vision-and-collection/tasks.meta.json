@@ -3,6 +3,10 @@
     "9.2 Write property tests for slot assignment and raw/zero-fill invariants": {
       "status": "passed",
       "lastRunTimestamp": 1794060963185
+    },
+    "11.2 Write mask tests and encoding property test": {
+      "status": "passed",
+      "lastRunTimestamp": 1794108139704
     }
   },
   "executionHistory": {
@@ -247,6 +251,37 @@
         "executionId": "69a7c33e-e88a-4e8f-8ef7-e24aa78b120b",
         "chatSessionId": "sess_e6b66acc-a799-4332-b47c-efdeaf9b92cb",
         "timestamp": 1794061241420
+      }
+    ],
+    "11.1 Implement MaskGenerator": [
+      {
+        "executionId": "3d005bdf-568d-4ad9-86d4-6c30800a5981",
+        "chatSessionId": "sess_3318ebad-ba9e-4435-903b-4640a7afc41e",
+        "timestamp": 1794107873541
+      },
+      {
+        "executionId": "3d005bdf-568d-4ad9-86d4-6c30800a5981",
+        "chatSessionId": "sess_3318ebad-ba9e-4435-903b-4640a7afc41e",
+        "timestamp": 1794107965997
+      }
+    ],
+    "11. Shadow mask generation": [
+      {
+        "executionId": "3d005bdf-568d-4ad9-86d4-6c30800a5981",
+        "chatSessionId": "sess_3318ebad-ba9e-4435-903b-4640a7afc41e",
+        "timestamp": 1794107966069
+      }
+    ],
+    "11.2 Write mask tests and encoding property test": [
+      {
+        "executionId": "759fdde0-45f5-47cf-a68d-e43d779b038c",
+        "chatSessionId": "sess_41953591-6e18-4c44-a735-cc45bad172bf",
+        "timestamp": 1794108011749
+      },
+      {
+        "executionId": "759fdde0-45f5-47cf-a68d-e43d779b038c",
+        "chatSessionId": "sess_41953591-6e18-4c44-a735-cc45bad172bf",
+        "timestamp": 1794108153859
       }
     ]
   }

@@ -204,13 +204,13 @@ graph TD
 - [x] 10. Checkpoint - core feature logic verified
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Shadow mask generation
-  - [ ] 11.1 Implement MaskGenerator
+- [x] 11. Shadow mask generation
+  - [x] 11.1 Implement MaskGenerator
     - Create `tools/collect/mask-generator.ts`: render the silhouette via the SAME `SilhouetteRenderer` with white-on-black options; crop to the detected-hands bounding box plus `padding = config.maskPaddingScale * handScalePx`; center and resize to 96x96 preserving aspect ratio; emit a single-channel grayscale `Uint8Array` (`0 = background`, `255 = shadow`)
     - Return a blank mask (all zeros) for label `none` with no hands; expose the same path for the live 96x96 thumbnail updated each frame
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 14.3, 14.4_
 
-  - [ ]* 11.2 Write mask tests and encoding property test
+  - [x] 11.2 Write mask tests and encoding property test
     - **Property 11: Mask has fixed shape and byte-exact encoding round-trip** — Validates: Requirements 11.9, 12.3, 16.4 (fast-check, ≥100 iterations, tagged comment)
     - Example tests: MaskGenerator invokes shared renderer with white-on-black (12.1); padding scales with Hand_Scale across two different-scale hands (12.2); `none` + no hands → all-zero mask (12.4)
     - _Requirements: 11.9, 12.1, 12.2, 12.3, 12.4, 16.4_
@@ -228,7 +228,7 @@ graph TD
 - [ ] 13. Versioned JSON export
   - [ ] 13.1 Implement Exporter
     - Create `tools/collect/exporter.ts`: serialize all samples into one JSON document with a metadata header (schema version, label list, mask size, normalization description, `maskEncoding`, export date) plus the sample list
-    - Encode each mask as base64; download a file whose name includes contributor + export date; block export with "nothing to export" when there are no samples
+    - Encode each mask as base64 using `encodeMask`/`decodeMask` from `tools/collect/mask-generator.ts` (do not reimplement the codec in the exporter); download a file whose name includes contributor + export date; block export with "nothing to export" when there are no samples
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6_
 
   - [ ]* 13.2 Write export round-trip property + example tests
