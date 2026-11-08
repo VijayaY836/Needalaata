@@ -7,6 +7,10 @@
     "11.2 Write mask tests and encoding property test": {
       "status": "passed",
       "lastRunTimestamp": 1794108139704
+    },
+    "13.2 Write export round-trip property + example tests": {
+      "status": "passed",
+      "lastRunTimestamp": 1794109318620
     }
   },
   "executionHistory": {
@@ -282,6 +286,56 @@
         "executionId": "759fdde0-45f5-47cf-a68d-e43d779b038c",
         "chatSessionId": "sess_41953591-6e18-4c44-a735-cc45bad172bf",
         "timestamp": 1794108153859
+      }
+    ],
+    "12.1 Implement SampleStore over IndexedDB": [
+      {
+        "executionId": "0edeb7d7-8d47-4d95-9bdd-a8c0c8b442be",
+        "chatSessionId": "sess_7bad3007-06f0-4a5e-9dc8-dc570a0ff0da",
+        "timestamp": 1794108889809
+      },
+      {
+        "executionId": "0edeb7d7-8d47-4d95-9bdd-a8c0c8b442be",
+        "chatSessionId": "sess_7bad3007-06f0-4a5e-9dc8-dc570a0ff0da",
+        "timestamp": 1794109030928
+      }
+    ],
+    "12. Sample persistence": [
+      {
+        "executionId": "0edeb7d7-8d47-4d95-9bdd-a8c0c8b442be",
+        "chatSessionId": "sess_7bad3007-06f0-4a5e-9dc8-dc570a0ff0da",
+        "timestamp": 1794109030975
+      }
+    ],
+    "13.1 Implement Exporter": [
+      {
+        "executionId": "e58477ba-2acb-4c50-a0f2-3b8a12a3dece",
+        "chatSessionId": "sess_b7312ff4-c187-42ad-81c9-17045ab7be9c",
+        "timestamp": 1794109117482
+      },
+      {
+        "executionId": "e58477ba-2acb-4c50-a0f2-3b8a12a3dece",
+        "chatSessionId": "sess_b7312ff4-c187-42ad-81c9-17045ab7be9c",
+        "timestamp": 1794109170211
+      }
+    ],
+    "13. Versioned JSON export": [
+      {
+        "executionId": "e58477ba-2acb-4c50-a0f2-3b8a12a3dece",
+        "chatSessionId": "sess_b7312ff4-c187-42ad-81c9-17045ab7be9c",
+        "timestamp": 1794109170324
+      }
+    ],
+    "13.2 Write export round-trip property + example tests": [
+      {
+        "executionId": "f0d9c836-ef16-4f50-9681-c96f3643bc7d",
+        "chatSessionId": "sess_ff8d9011-b657-4f38-8c29-d90d9ad88196",
+        "timestamp": 1794109259843
+      },
+      {
+        "executionId": "f0d9c836-ef16-4f50-9681-c96f3643bc7d",
+        "chatSessionId": "sess_ff8d9011-b657-4f38-8c29-d90d9ad88196",
+        "timestamp": 1794109330795
       }
     ]
   }

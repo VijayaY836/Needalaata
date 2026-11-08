@@ -215,8 +215,8 @@ graph TD
     - Example tests: MaskGenerator invokes shared renderer with white-on-black (12.1); padding scales with Hand_Scale across two different-scale hands (12.2); `none` + no hands → all-zero mask (12.4)
     - _Requirements: 11.9, 12.1, 12.2, 12.3, 12.4, 16.4_
 
-- [ ] 12. Sample persistence
-  - [ ] 12.1 Implement SampleStore over IndexedDB
+- [x] 12. Sample persistence
+  - [x] 12.1 Implement SampleStore over IndexedDB
     - Create `tools/collect/sample-store.ts`: database `needalaata-collect`, store `samples` keyed by `id`, indexes `by_burst` and `by_label`
     - Implement `put`, `all`, `countsByLabel`, `deleteBurst`, `undoLastBurst` (delete all samples sharing the max-`timestamp` sample's `burstId`), `clearAll`; restore samples and counts on load; surface a non-fatal "samples could not be saved" on IndexedDB failure
     - _Requirements: 15.1, 15.2, 15.3, 15.5, 13.1_
@@ -225,13 +225,13 @@ graph TD
     - Undo last burst deletes exactly the max-timestamp `burstId` group, verified after simulating a reload (empty in-memory state); counts and samples restore on load
     - _Requirements: 15.1, 15.2, 15.3_
 
-- [ ] 13. Versioned JSON export
-  - [ ] 13.1 Implement Exporter
+- [x] 13. Versioned JSON export
+  - [x] 13.1 Implement Exporter
     - Create `tools/collect/exporter.ts`: serialize all samples into one JSON document with a metadata header (schema version, label list, mask size, normalization description, `maskEncoding`, export date) plus the sample list
     - Encode each mask as base64 using `encodeMask`/`decodeMask` from `tools/collect/mask-generator.ts` (do not reimplement the codec in the exporter); download a file whose name includes contributor + export date; block export with "nothing to export" when there are no samples
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6_
 
-  - [ ]* 13.2 Write export round-trip property + example tests
+  - [x] 13.2 Write export round-trip property + example tests
     - **Property 12: Export round-trip preserves samples** (masks decoded byte-for-byte) — Validates: Requirements 16.1, 16.3, 16.4 (fast-check, ≥100 iterations, tagged comment)
     - Example: filename includes contributor + date; "nothing to export" guard fires with zero samples
     - _Requirements: 16.1, 16.3, 16.4, 16.5, 16.6_
