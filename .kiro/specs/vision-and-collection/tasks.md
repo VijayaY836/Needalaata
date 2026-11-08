@@ -236,8 +236,8 @@ graph TD
     - Example: filename includes contributor + date; "nothing to export" guard fires with zero samples
     - _Requirements: 16.1, 16.3, 16.4, 16.5, 16.6_
 
-- [ ] 14. Capture orchestration
-  - [ ] 14.1 Implement CaptureController
+- [x] 14. Capture orchestration
+  - [x] 14.1 Implement CaptureController
     - Create `tools/collect/capture-controller.ts`: countdown (`config.countdownDurationMs`), burst timing (`config.burstDurationMs`) minting a new `Burst_ID` on start, accumulator-based capture at `config.captureRatePerSecond` (steady ~10/s independent of frame rate), recording-in-progress indicator, return to ready on burst end
     - Guards: disable recording until HandLandmarker `isReady()`; block recording and prompt when contributor name is empty; mint a `Session_ID` per page load and label each sample with the active Label, session id, burst id, and timestamp
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 14.1, 14.2, 9.3, 11.10_
@@ -246,8 +246,8 @@ graph TD
     - Burst accumulator emits ~10 samples per simulated second at `config.captureRatePerSecond = 10` independent of frame rate
     - _Requirements: 10.3_
 
-- [ ] 15. Collection tool UI wiring
-  - [ ] 15.1 Wire the collector page in tools/collect/
+- [x] 15. Collection tool UI wiring
+  - [x] 15.1 Wire the collector page in tools/collect/
     - Create `tools/collect/ui.ts` and `main` entry: label picker offering exactly the seven labels, marking the selected one active; show its reference illustration and shadow description sourced from the product shadow vocabulary; free-text contributor name field stored with each sample
     - Per-label live counts for all seven labels incremented on capture and refreshed within `config.uiRefreshIntervalMs`; live 96x96 mask thumbnail updated each frame; countdown/record/undo/clear(with confirmation)/export controls; disable recording until the tracker is ready
     - Integrate the pipeline, FeatureExtractor, MaskGenerator, CaptureController, SampleStore, and Exporter so capture → persist → counts/export flow end to end
@@ -263,7 +263,7 @@ graph TD
     - Mirroring single-flip left-side test (4.2); camera startup paths (2.2–2.4); HandLandmarker GPU→CPU→fail (3.4–3.6); burst accumulator rate (10.3); undo-after-reload (15.3); export round-trip (16.*); IndexedDB restore survives simulated reload (15.1, 15.2); add a performance-smoke note asserting the 30 fps target with the FPS overlay and offscreen downscale
     - _Requirements: 4.2, 2.2, 2.3, 2.4, 3.4, 3.5, 3.6, 10.3, 15.1, 15.2, 15.3, 16.1, 16.3, 16.4_
 
-- [ ] 18. Final checkpoint - Ensure all tests pass
+- [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Needalaata – Shadow Collector</title>
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #0a0a0c; color: #d8c8b0; font-family: system-ui, sans-serif; }
+      #app { display: flex; flex-direction: column; align-items: center; padding: 8px; gap: 8px; }
+      #preview { width: 100%; max-width: 960px; height: auto; background: #0a0a0c; }
+      #collector { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 12px; }
+      .on-device-notice { font-size: 13px; opacity: 0.8; }
+      .camera-message, .message { color: #ffb36b; }
+      .label-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+      .label-btn, .controls button { background: #1a1a1f; color: #d8c8b0; border: 1px solid #554; padding: 8px 12px; cursor: pointer; }
+      .label-btn.active { border-color: #ffb36b; color: #ffb36b; outline: 2px solid #ffb36b; }
+      .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+      .count { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.8; }
+      .reference { display: flex; gap: 12px; align-items: center; }
+      .ref-image svg { width: 96px; height: 96px; }
+      .reference h2 { margin: 0; text-transform: capitalize; }
+      .reference p { margin: 4px 0 0; }
+      .thumb-row { display: flex; gap: 12px; align-items: center; }
+      .mask-thumb { width: 96px; height: 96px; image-rendering: pixelated; border: 1px solid #554; }
+      .status.recording { color: #ff6b6b; }
+      input[type="text"] { padding: 6px; background: #1a1a1f; color: #d8c8b0; border: 1px solid #554; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

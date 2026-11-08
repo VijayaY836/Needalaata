@@ -58,7 +58,7 @@ describe('Exporter', () => {
         samples.forEach((s, i) => {
           const out = parsed.samples[i];
           expect(out).toEqual(s);
-          expect(Array.from(decodeMask(out.maskBase64))).toEqual(
+          expect(Array.from(decodeMask(out!.maskBase64))).toEqual(
             Array.from(decodeMask(s.maskBase64)),
           );
         });

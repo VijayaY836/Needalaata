@@ -337,6 +337,56 @@
         "chatSessionId": "sess_ff8d9011-b657-4f38-8c29-d90d9ad88196",
         "timestamp": 1794109330795
       }
+    ],
+    "14.1 Implement CaptureController": [
+      {
+        "executionId": "d8266a63-a97b-4e8b-9219-5c8daa98443b",
+        "chatSessionId": "sess_c5cce1d6-5d83-4364-9d0c-d0a6225e5fde",
+        "timestamp": 1794109679857
+      },
+      {
+        "executionId": "d8266a63-a97b-4e8b-9219-5c8daa98443b",
+        "chatSessionId": "sess_c5cce1d6-5d83-4364-9d0c-d0a6225e5fde",
+        "timestamp": 1794109935372
+      }
+    ],
+    "14. Capture orchestration": [
+      {
+        "executionId": "d8266a63-a97b-4e8b-9219-5c8daa98443b",
+        "chatSessionId": "sess_c5cce1d6-5d83-4364-9d0c-d0a6225e5fde",
+        "timestamp": 1794109935474
+      }
+    ],
+    "15.1 Wire the collector page in tools/collect/": [
+      {
+        "executionId": "ab6743e9-7b30-414f-96ce-d2548cbb267c",
+        "chatSessionId": "sess_8e3fcf89-fcb9-436f-9401-5c08af4080f6",
+        "timestamp": 1794109997787
+      },
+      {
+        "executionId": "ab6743e9-7b30-414f-96ce-d2548cbb267c",
+        "chatSessionId": "sess_8e3fcf89-fcb9-436f-9401-5c08af4080f6",
+        "timestamp": 1794110154589
+      }
+    ],
+    "15. Collection tool UI wiring": [
+      {
+        "executionId": "ab6743e9-7b30-414f-96ce-d2548cbb267c",
+        "chatSessionId": "sess_8e3fcf89-fcb9-436f-9401-5c08af4080f6",
+        "timestamp": 1794110154639
+      }
+    ],
+    "18. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "2053f2f4-d961-435a-be9b-c1d8a9b732d2",
+        "chatSessionId": "sess_2ae1c4fa-7e71-4929-8c26-3565cf82425e",
+        "timestamp": 1794110201055
+      },
+      {
+        "executionId": "2053f2f4-d961-435a-be9b-c1d8a9b732d2",
+        "chatSessionId": "sess_2ae1c4fa-7e71-4929-8c26-3565cf82425e",
+        "timestamp": 1794110244253
+      }
     ]
   }
 }
