@@ -12,6 +12,7 @@
     "postinstall": "node scripts/setup-assets.mjs"
   },
   "devDependencies": {
+    "fake-indexeddb": "6.2.5",
     "fast-check": "4.10.2",
     "typescript": "5.9.3",
     "vite": "8.3.6",

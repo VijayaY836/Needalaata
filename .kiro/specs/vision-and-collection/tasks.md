@@ -221,7 +221,7 @@ graph TD
     - Implement `put`, `all`, `countsByLabel`, `deleteBurst`, `undoLastBurst` (delete all samples sharing the max-`timestamp` sample's `burstId`), `clearAll`; restore samples and counts on load; surface a non-fatal "samples could not be saved" on IndexedDB failure
     - _Requirements: 15.1, 15.2, 15.3, 15.5, 13.1_
 
-  - [-] 12.2 Write persistence tests including undo-after-reload
+  - [x] 12.2 Write persistence tests including undo-after-reload
     - Undo last burst deletes exactly the max-timestamp `burstId` group, verified after simulating a reload (empty in-memory state); counts and samples restore on load
     - _Requirements: 15.1, 15.2, 15.3_
 
