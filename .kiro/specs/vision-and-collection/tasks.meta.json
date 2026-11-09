@@ -387,6 +387,66 @@
         "chatSessionId": "sess_2ae1c4fa-7e71-4929-8c26-3565cf82425e",
         "timestamp": 1794110244253
       }
+    ],
+    "1.2 Configure multi-page Vite build": [
+      {
+        "executionId": "3d220b33-4ed9-4471-a999-be27e4a8d7ed",
+        "chatSessionId": "sess_7faadd4d-086c-4a28-aff3-2b3a59a84eb5",
+        "timestamp": 1794201524436
+      },
+      {
+        "executionId": "3d220b33-4ed9-4471-a999-be27e4a8d7ed",
+        "chatSessionId": "sess_7faadd4d-086c-4a28-aff3-2b3a59a84eb5",
+        "timestamp": 1794201570816
+      }
+    ],
+    "1.3 Install dependencies and test tooling": [
+      {
+        "executionId": "08e18c1e-8d61-43c7-a6c4-a7a0a6dab005",
+        "chatSessionId": "sess_ecb9c431-bb3c-4463-b408-350dcfe8c7de",
+        "timestamp": 1794201593381
+      },
+      {
+        "executionId": "08e18c1e-8d61-43c7-a6c4-a7a0a6dab005",
+        "chatSessionId": "sess_ecb9c431-bb3c-4463-b408-350dcfe8c7de",
+        "timestamp": 1794201627896
+      }
+    ],
+    "1. Project scaffolding and asset setup": [
+      {
+        "executionId": "08e18c1e-8d61-43c7-a6c4-a7a0a6dab005",
+        "chatSessionId": "sess_ecb9c431-bb3c-4463-b408-350dcfe8c7de",
+        "timestamp": 1794201627946
+      }
+    ],
+    "14.2 Write capture rate test": [
+      {
+        "executionId": "c5995eec-56a1-40e9-a3e9-d3d21590d28d",
+        "chatSessionId": "sess_80a6c4e3-5290-48cf-a914-6c76c739b1c2",
+        "timestamp": 1794201660391
+      },
+      {
+        "executionId": "c5995eec-56a1-40e9-a3e9-d3d21590d28d",
+        "chatSessionId": "sess_80a6c4e3-5290-48cf-a914-6c76c739b1c2",
+        "timestamp": 1794201700791
+      },
+      {
+        "executionId": "608a36a6-9a77-4520-b985-ca009e5aee5c",
+        "chatSessionId": "sess_80a6c4e3-5290-48cf-a914-6c76c739b1c2",
+        "timestamp": 1794201781044
+      },
+      {
+        "executionId": "608a36a6-9a77-4520-b985-ca009e5aee5c",
+        "chatSessionId": "sess_80a6c4e3-5290-48cf-a914-6c76c739b1c2",
+        "timestamp": 1794201834670
+      }
+    ],
+    "12.2 Write persistence tests including undo-after-reload": [
+      {
+        "executionId": "d0ff0aff-d121-46eb-8468-350a2de7a0ee",
+        "chatSessionId": "sess_73bfe574-6fc7-44bf-afb7-1c4599da54d4",
+        "timestamp": 1794201930092
+      }
     ]
   }
 }

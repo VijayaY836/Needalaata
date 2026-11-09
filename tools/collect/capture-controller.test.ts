@@ -88,3 +88,52 @@ describe('CaptureController', () => {
     expect(c.isRecording).toBe(false);
   });
 });
+
+describe('CaptureController capture rate (Req 10.3)', () => {
+  /** Runs a 4s burst with the given frame-interval generator; returns sample counts per simulated second. */
+  function perSecondCounts(nextStep: () => number): number[] {
+    const seconds = 4;
+    const counts = new Array<number>(seconds).fill(0);
+    let t = 0;
+    const c = createCaptureController({
+      store: { put: async () => {} },
+      maskGenerator: { generate: () => new Uint8Array(96 * 96) },
+      isTrackerReady: () => true,
+      config: { countdownDurationMs: 0, burstDurationMs: seconds * 1000, captureRatePerSecond: 10 },
+      newId: () => 'id',
+      onSample: () => {
+        const sec = Math.floor(t / 1000);
+        if (sec < seconds) counts[sec] = (counts[sec] ?? 0) + 1;
+      },
+    });
+    c.setLabel('rabbit');
+    c.setContributor('Asha');
+    c.start(0);
+    while (t < seconds * 1000 - 1) {
+      c.update(t, frame);
+      t += nextStep();
+    }
+    return counts;
+  }
+
+  it.each([30, 60, 144])('emits ~10 samples per second at %i fps', (fps) => {
+    const counts = perSecondCounts(() => 1000 / fps);
+    for (const n of counts) {
+      expect(n).toBeGreaterThanOrEqual(9);
+      expect(n).toBeLessThanOrEqual(11);
+    }
+  });
+
+  it('emits ~10 samples per second with irregular frame intervals', () => {
+    // Deterministic LCG yielding steps between 5ms and 60ms.
+    let seed = 12345;
+    const counts = perSecondCounts(() => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return 5 + (seed / 4294967296) * 55;
+    });
+    for (const n of counts) {
+      expect(n).toBeGreaterThanOrEqual(9);
+      expect(n).toBeLessThanOrEqual(11);
+    }
+  });
+});

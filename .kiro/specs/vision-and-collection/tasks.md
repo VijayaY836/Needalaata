@@ -92,19 +92,19 @@ graph TD
 
 ## Tasks
 
-- [ ] 1. Project scaffolding and asset setup
+- [x] 1. Project scaffolding and asset setup
   - [x] 1.1 Initialize Vite + TypeScript strict project with folder structure
     - Create `package.json`, `tsconfig.json` with `"strict": true`, root `index.html`
     - Create directories `src/vision/`, `src/config.ts` placeholder, `tools/collect/`
     - Ensure the vision module folder contains no puppet/game-flow logic (structure boundary)
     - _Requirements: 1.1, 1.3, 1.6_
 
-  - [ ] 1.2 Configure multi-page Vite build
+  - [x] 1.2 Configure multi-page Vite build
     - Add `vite.config.ts` with Rollup inputs `main: index.html` and `collect: tools/collect/index.html`
     - Create a minimal `tools/collect/index.html` entry point
     - _Requirements: 1.4, Design "Multi-page Vite build"_
 
-  - [ ] 1.3 Install dependencies and test tooling
+  - [x] 1.3 Install dependencies and test tooling
     - Add `@mediapipe/tasks-vision` as the hand-tracking dependency
     - Add `vitest` and `fast-check` as dev dependencies; add a `test` script using `vitest --run`
     - _Requirements: 1.2, Design "Testing Strategy"_
@@ -221,7 +221,7 @@ graph TD
     - Implement `put`, `all`, `countsByLabel`, `deleteBurst`, `undoLastBurst` (delete all samples sharing the max-`timestamp` sample's `burstId`), `clearAll`; restore samples and counts on load; surface a non-fatal "samples could not be saved" on IndexedDB failure
     - _Requirements: 15.1, 15.2, 15.3, 15.5, 13.1_
 
-  - [ ]* 12.2 Write persistence tests including undo-after-reload
+  - [-] 12.2 Write persistence tests including undo-after-reload
     - Undo last burst deletes exactly the max-timestamp `burstId` group, verified after simulating a reload (empty in-memory state); counts and samples restore on load
     - _Requirements: 15.1, 15.2, 15.3_
 
@@ -242,7 +242,7 @@ graph TD
     - Guards: disable recording until HandLandmarker `isReady()`; block recording and prompt when contributor name is empty; mint a `Session_ID` per page load and label each sample with the active Label, session id, burst id, and timestamp
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 14.1, 14.2, 9.3, 11.10_
 
-  - [ ]* 14.2 Write capture rate test
+  - [x] 14.2 Write capture rate test
     - Burst accumulator emits ~10 samples per simulated second at `config.captureRatePerSecond = 10` independent of frame rate
     - _Requirements: 10.3_
 
