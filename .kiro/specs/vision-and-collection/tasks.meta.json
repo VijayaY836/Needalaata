@@ -452,6 +452,40 @@
         "chatSessionId": "sess_73bfe574-6fc7-44bf-afb7-1c4599da54d4",
         "timestamp": 1794202037155
       }
+    ],
+    "6.2 Write mirroring and emission unit test": [
+      {
+        "executionId": "b16874d8-8b8e-4777-9975-cc4bcf43d8ac",
+        "chatSessionId": "sess_16ab8c0f-d144-4693-8265-9b826d17f7e1",
+        "timestamp": 1794202202716
+      },
+      {
+        "executionId": "b16874d8-8b8e-4777-9975-cc4bcf43d8ac",
+        "chatSessionId": "sess_16ab8c0f-d144-4693-8265-9b826d17f7e1",
+        "timestamp": 1794202317425
+      }
+    ],
+    "7.2 Write renderer single-flip example test": [
+      {
+        "executionId": "063cca96-523b-4963-8b94-ef9180328123",
+        "chatSessionId": "sess_03d115d1-7954-4f74-9e26-0af9afa23f96",
+        "timestamp": 1794202390934
+      },
+      {
+        "executionId": "063cca96-523b-4963-8b94-ef9180328123",
+        "chatSessionId": "sess_03d115d1-7954-4f74-9e26-0af9afa23f96",
+        "timestamp": 1794202448558
+      },
+      {
+        "executionId": "c6abacc0-0bf4-4bcf-80b7-d8c128c514d1",
+        "chatSessionId": "sess_03d115d1-7954-4f74-9e26-0af9afa23f96",
+        "timestamp": 1794202534938
+      },
+      {
+        "executionId": "c6abacc0-0bf4-4bcf-80b7-d8c128c514d1",
+        "chatSessionId": "sess_03d115d1-7954-4f74-9e26-0af9afa23f96",
+        "timestamp": 1794202578026
+      }
     ]
   }
 }

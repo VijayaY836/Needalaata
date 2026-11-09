@@ -157,7 +157,7 @@ graph TD
     - Guard reprocessing via `video.currentTime` unchanged; apply the single mirror `x' = 1 - x`; emit `FrameResult` with `frameWidth`/`frameHeight`; emit empty hands when none detected; provide `onFrame` subscribe returning an unsubscribe
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
-  - [ ]* 6.2 Write mirroring and emission unit test
+  - [x] 6.2 Write mirroring and emission unit test
     - Verify a landmark mirrored to `x = 0.2` maps to the left of the preview and that the same timestamp is emitted as was passed to detect
     - _Requirements: 4.2, 5.1_
 
@@ -168,7 +168,7 @@ graph TD
     - Blur via offscreen canvas scaled by `config.silhouetteDownscale` using `ctx.filter = blur(...)` with downscale→upscale fallback when `ctx.filter` is unavailable; background-only when no hands
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 4.2_
 
-  - [ ]* 7.2 Write renderer single-flip example test
+  - [x] 7.2 Write renderer single-flip example test
     - Confirm a mirrored `x = 0.2` landmark renders on the left side and no additional canvas flip is applied
     - _Requirements: 4.2_
 
