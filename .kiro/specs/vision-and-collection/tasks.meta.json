@@ -486,6 +486,49 @@
         "chatSessionId": "sess_03d115d1-7954-4f74-9e26-0af9afa23f96",
         "timestamp": 1794202578026
       }
+    ],
+    "4.2 Write camera startup tests": [
+      {
+        "executionId": "9b523ce7-55f9-483a-8288-5883707e5e7e",
+        "chatSessionId": "sess_f6882be9-75bb-4d62-acb3-6d8250eda91f",
+        "timestamp": 1794202693020
+      },
+      {
+        "executionId": "9b523ce7-55f9-483a-8288-5883707e5e7e",
+        "chatSessionId": "sess_f6882be9-75bb-4d62-acb3-6d8250eda91f",
+        "timestamp": 1794202746983
+      }
+    ],
+    "5.2 Write HandLandmarker init tests": [
+      {
+        "executionId": "8d29d38d-f397-4e7a-854b-90ba69bccd01",
+        "chatSessionId": "sess_eefacf41-10c7-4607-9435-4a03b4e1be6e",
+        "timestamp": 1794202773234
+      },
+      {
+        "executionId": "8d29d38d-f397-4e7a-854b-90ba69bccd01",
+        "chatSessionId": "sess_eefacf41-10c7-4607-9435-4a03b4e1be6e",
+        "timestamp": 1794202812371
+      }
+    ],
+    "17.1 Write integration, example, and performance-smoke tests": [
+      {
+        "executionId": "d7dbca6a-dfc9-48b8-97fb-f5ed6c9769e7",
+        "chatSessionId": "sess_382e186b-3da7-4704-8d65-77a480ce9feb",
+        "timestamp": 1794202842621
+      },
+      {
+        "executionId": "d7dbca6a-dfc9-48b8-97fb-f5ed6c9769e7",
+        "chatSessionId": "sess_382e186b-3da7-4704-8d65-77a480ce9feb",
+        "timestamp": 1794202969585
+      }
+    ],
+    "17. Final verification": [
+      {
+        "executionId": "d7dbca6a-dfc9-48b8-97fb-f5ed6c9769e7",
+        "chatSessionId": "sess_382e186b-3da7-4704-8d65-77a480ce9feb",
+        "timestamp": 1794202969683
+      }
     ]
   }
 }

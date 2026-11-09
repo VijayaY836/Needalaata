@@ -137,7 +137,7 @@ graph TD
     - Surface "camera access is required" on permission denial and halt startup; surface "no camera was found" when no device exists; show the on-device processing notice
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 4.1_
 
-  - [ ]* 4.2 Write camera startup tests
+  - [x] 4.2 Write camera startup tests
     - Test granted / denied / no-device paths surface the correct messages
     - _Requirements: 2.2, 2.3, 2.4_
 
@@ -147,7 +147,7 @@ graph TD
     - Attempt the GPU delegate first, retry with CPU on failure, surface "hand tracking could not start" if both fail; expose `detect(video, ts)` and `isReady()`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ]* 5.2 Write HandLandmarker init tests
+  - [x] 5.2 Write HandLandmarker init tests
     - Test GPU-preferred, CPU fallback, and both-fail reporting
     - _Requirements: 3.4, 3.5, 3.6_
 
@@ -258,8 +258,8 @@ graph TD
     - Create `src/main.ts` and root `index.html` content: start the camera, run the VisionPipeline, render the SilhouetteRenderer onto the near-black canvas, attach the FPS overlay, and show the on-device processing notice
     - _Requirements: 2.5, 4.1, 4.2, 6.1, 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 17. Final verification
-  - [ ]* 17.1 Write integration, example, and performance-smoke tests
+- [x] 17. Final verification
+  - [x] 17.1 Write integration, example, and performance-smoke tests
     - Mirroring single-flip left-side test (4.2); camera startup paths (2.2–2.4); HandLandmarker GPU→CPU→fail (3.4–3.6); burst accumulator rate (10.3); undo-after-reload (15.3); export round-trip (16.*); IndexedDB restore survives simulated reload (15.1, 15.2); add a performance-smoke note asserting the 30 fps target with the FPS overlay and offscreen downscale
     - _Requirements: 4.2, 2.2, 2.3, 2.4, 3.4, 3.5, 3.6, 10.3, 15.1, 15.2, 15.3, 16.1, 16.3, 16.4_
 
