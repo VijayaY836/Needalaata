@@ -98,3 +98,63 @@
 - Recording sessions with 3–5 people, 250+ samples per label; export after each session
 - Optional: PBT mutation check (break the slot tiebreaker, screenshot fast-check catching it)
 - Spec 2: `classifier`
+
+## Nov 9 – Spec 1 fully tested + Spec 2 drafted (Day 4)
+
+### Tasks 1.2, 1.3: Housekeeping
+- Multi-page build and Vitest + fast-check were already in place but unticked
+- Kiro verified the existing work and checked both off
+
+### Task 14.2: Capture rate test
+- Simulates bursts at different frame rates
+- Accumulator emits ~10 samples/sec → 40 per 4 s burst, independent of FPS
+- Done before recording day so the dataset maths (bursts × 40) is guaranteed
+
+### Task 12.2: Undo after reload
+- `fake-indexeddb` simulates a page reload with empty in-memory state
+- Undo deletes exactly the latest-timestamp burst; samples and counts restore on load
+- Contributors will rely on undo and persistence during recording, so this was tested first
+
+### Tasks 6.2, 7.2: Single-mirroring tests
+- Pipeline mirrors once (x' = 1 − x): mirrored x = 0.2 lands on the left of the preview
+- Emitted timestamp matches the one passed to detect
+- Renderer applies no extra canvas flip
+- Locks in the mirroring contract before the classifier depends on it
+
+### Tasks 4.2, 5.2: Startup paths
+- Camera: granted / denied / no-device each surface the right message
+- HandLandmarker: GPU first → CPU fallback → clear error if both fail
+
+### Task 17.1: Integration + perf smoke
+- End-to-end checks across capture → persist → export
+- 30 fps performance note alongside the FPS overlay
+
+### Strict mode kept the tests honest
+- `noUncheckedIndexedAccess` flagged unsafe array indexing in new tests (7 errors)
+- Fixed with explicit throwing guards and `?? 0`, never `!` or a looser tsconfig
+- A missing offscreen canvas now fails with a clear message instead of a crash
+- Spec 1: every task done, including all optional tests
+
+### Spec 2: classifier – drafted
+- Prompt covered 12 requirements: shared code moved into `src/vision/`, dataset loading and validation,
+  leak-free split (hold out whole contributors), landmark MLP vs silhouette CNN, ≥90% held-out target,
+  TF.js export, debounced live predictor, C-key debug view
+- Training in TypeScript on Node, reusing the exact production feature code (no train/serve skew)
+- Kiro generated requirements (EARS), design (21 correctness properties) and tasks (14 groups)
+- Kiro checked TF.js APIs with Context7 and ran small local tests before designing:
+  - tfjs-node fails on Node 26 → training probes backends and falls back to wasm → cpu
+  - `restoreBestWeights` unsupported and `fit` shuffle unseedable → own seeded epoch loop
+  - `.gitignore` ignored all of public/models/ → classifier folder un-ignored
+- Review flagged fixes before implementation: stable contributor IDs, required export round-trip test,
+  seeded weight initialisers
+- Kiro generated all three stages in one go; from Spec 3 on, the prompt stops after requirements for review
+
+### Other
+- Best Student Project is awarded per category (4 prizes), so it isn't tied to Costume Contest.
+  Frankenstein stays open
+- Bonus prizes to check: Best Ghost of Kiroween Past, Best Demo
+- Puppet art plan: ChatGPT-generated webps as separate jointed parts in one consistent style, credited in the write-up
+
+### Next (Nov 10)
+- Recording sessions with 3–5 people, 250+ samples per label; export after each session
+- Send the Spec 2 revision prompt, review tasks.md, start task 1.1
