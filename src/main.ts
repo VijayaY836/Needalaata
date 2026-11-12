@@ -13,6 +13,7 @@ import { createVisionPipeline } from './vision/pipeline';
 import { createSilhouetteRenderer } from './vision/silhouette-renderer';
 import { createFpsOverlay } from './vision/fps-overlay';
 import { createPuppetFollow } from './spike/puppet-follow';
+import { createLionRabbitScene } from './spike/scene-lion-rabbit';
 
 async function bootstrap(): Promise<void> {
   const app = document.getElementById('app') ?? document.body;
@@ -81,14 +82,28 @@ async function bootstrap(): Promise<void> {
   // Spike: puppet mode, toggled with the P key (off by default).
   const puppet = createPuppetFollow(canvas);
   let puppetMode = false;
+  // Spike: "The Clever Rabbit and the Lion" scene (S toggles, R restarts, M mutes).
+  // enter() runs inside the key press so Web Audio is allowed to start.
+  const scene = createLionRabbitScene(canvas);
   window.addEventListener('keydown', (e) => {
-    if ((e.key === 'p' || e.key === 'P') && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = e.key.toLowerCase();
+    if (key === 'p') {
       puppetMode = !puppetMode;
+    } else if (key === 's') {
+      if (scene.active) scene.exit();
+      else scene.enter();
+    } else if (key === 'r') {
+      scene.restart();
+    } else if (key === 'm') {
+      scene.toggleMute();
     }
   });
 
   pipeline.onFrame((frame) => {
-    if (puppetMode) {
+    if (scene.active) {
+      scene.render(frame);
+    } else if (puppetMode) {
       puppet.render(frame);
     } else {
       renderer.render(frame, {

@@ -164,3 +164,51 @@
 - Predictions match the in-memory model (5 decimals); `weights.bin` is requested under `/models/classifier/`, so the HTTP path-resolution step is exercised
 - Task 8.5 fallback (`tf.io.fromMemory`) is not needed
 - Test: `training/export.fetch-loader.test.ts`; passes, and `npm run typecheck` is clean
+
+## Nov 12–13 – Spec 2 finalised, group 1 built, first playable scene (Day 5)
+
+### Spec 2: classifier – revisions
+- Stable contributor IDs: append-only registry (data/contributors.json, gitignored), names trimmed and
+  matched case-insensitively; test contributors chosen by ID in training-config.ts
+- Export round-trip test made required: custom writer (tf.io.withSaveHandler) → tf.loadLayersModel → same predictions
+- All initialisers seeded; dropout deliberately left unseeded (the one source of run-to-run variation)
+- Hygiene test also asserts /.kiro is never ignored (ignoring it would disqualify the entry)
+- Pointing and a relaxed open hand count as `none` (they'll be the puppeteering poses)
+- Kiro's subagent verified behaviour in a throwaway repo and the tfjs-core source instead of guessing.
+  Slow, but no surprises later
+
+### Group 1: relocation, deps, gitignore
+- FeatureExtractor moved into src/vision/ as a 100% rename (no logic change); MaskGenerator only had import paths updated
+- public/models/classifier/ un-ignored; data/raw/, contributors.json, training/out/ ignored
+- Fake-fetch model loading confirmed working in Node
+- 70/70 tests passing, tsc clean
+
+### Spike: first playable scene (vibe-coded, branch spike/puppet-follow)
+- Rabbit follows the index fingertip on a warm, flickering lamp-lit cloth screen (P key)
+- "The Clever Rabbit and the Lion" (S key): lion appears → rabbit appears → hold hand steady to awaken →
+  point to lead the rabbit to the well → lion bounds over, sees its reflection, roars, leaps in → R to replay
+- Puppet art: ChatGPT-generated Tholu Bommalata-style images; white backgrounds removed with an edge
+  flood fill so the perforation dots stay
+- Multiply blending looked beautiful alone but turned overlaps muddy → switched to alpha cutouts + warm glow
+- Web Audio sound effects (chimes, roar, splash, lamp crackle); Web Speech narration was silent → dropped for now
+- Fixed 16:9 world that scales down on narrow screens, so nothing spills off or scrolls
+- Lesson: vibe coding got a feel-it-now demo in one evening, but it's one untested file. The real
+  version gets rebuilt through specs, with this spike as the reference
+
+![First playable scene](docs/screenshots/scene-spike.png)
+
+### Design decisions
+- Category: **Resurrection** (reviving a dying 2,000-year-old projection art). Targets: Best Resurrection,
+  Best Student Project, Best Demo, Bonus Blog, Social Blitz
+- Interaction: cast a shape once to summon → relax and point; the puppet follows the index fingertip
+- Puppet library: shadow-cast (rabbit, lion, bird, snake, crocodile, demon) + stock puppets summoned by a
+  steady hand (man, woman, king, queen, farmer, boy, girl, monkey, elephant, deer)
+- Stretch, Spec 7 "Weave Your Own Tale": choose up to 3 characters → write a short story → a text LLM turns it
+  into a screenplay in the same format as the hand-written tales → validated, then performed
+
+### Other
+- Received the 4,000 Kiro credits
+
+### Next
+- Record my own data (14 bursts), then others
+- Spec 2 groups 2–3: shared helpers + debounce with property tests
