@@ -158,3 +158,9 @@
 ### Next (Nov 10)
 - Recording sessions with 3–5 people, 250+ samples per label; export after each session
 - Send the Spec 2 revision prompt, review tasks.md, start task 1.1
+
+### Task 1.6: `loadLayersModel` with fake `fetchFunc` in Node
+- Outcome: **works**. `tf.loadLayersModel('http://localhost/models/classifier/model.json', { fetchFunc })` loads a model served from a temp dir via a fake fetch (global `Response`) on the CPU backend
+- Predictions match the in-memory model (5 decimals); `weights.bin` is requested under `/models/classifier/`, so the HTTP path-resolution step is exercised
+- Task 8.5 fallback (`tf.io.fromMemory`) is not needed
+- Test: `training/export.fetch-loader.test.ts`; passes, and `npm run typecheck` is clean

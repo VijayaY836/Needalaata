@@ -2,7 +2,7 @@
 // Mask codec is reused from mask-generator.ts; it is intentionally not reimplemented here.
 
 import { config } from '../../src/config';
-import { decodeMask, encodeMask } from './mask-generator';
+import { decodeMask, encodeMask } from '../../src/vision/mask-generator';
 import { LABELS } from './types';
 import type { ExportDocument, ExportMetadata, Sample } from './types';
 

@@ -6,12 +6,12 @@
 // With no hands the mask is blank (Req 12.4). The same path feeds the live
 // thumbnail (Req 14.3, 14.4).
 
-import { config } from '../../src/config';
+import { config } from '../config';
 import {
   createSilhouetteRenderer,
   type RenderOptions,
   type SilhouetteRenderer,
-} from '../../src/vision/silhouette-renderer';
+} from './silhouette-renderer';
 import type { HandFeatures } from './feature-extractor';
 import type { FrameResult } from './types';
 

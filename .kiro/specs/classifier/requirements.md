@@ -30,14 +30,19 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 - **Dataset**: The set of valid Samples loaded from one or more Export_Files in `data/raw/`.
 - **Raw_Data_Folder**: The local, gitignored `data/raw/` folder that holds Export_Files.
 - **Contributor**: The person who recorded a Sample, identified in storage by a free-text name.
-- **Contributor_ID**: A stable anonymised identifier (`C1`, `C2`, ...) assigned to each distinct Contributor name. Reports use Contributor_IDs and never names.
+- **Normalised_Name**: A Contributor name after removing leading and trailing whitespace and applying case-insensitive comparison. Two names with the same Normalised_Name denote the same Contributor.
+- **Display_Name**: The Contributor name exactly as first seen for a Normalised_Name, stored in the Contributor_Registry.
+- **Contributor_ID**: A stable anonymised identifier (`C1`, `C2`, ...) assigned to each distinct Normalised_Name through the Contributor_Registry. Once assigned, a Contributor_ID never changes. Reports use Contributor_IDs and never names.
+- **Contributor_Registry**: The persistent, append-only, gitignored mapping file `data/contributors.json` from Normalised_Names to Contributor_IDs, storing the Display_Name for each entry. It is the only place where Contributor names are stored by the Training_Pipeline.
+- **Test_Contributor_IDs**: The list of Contributor_IDs, set in the Training_Config, whose Samples form the Test_Split.
 - **Burst**: The group of Samples sharing one Burst_ID.
 - **Dataset_Report**: The JSON and readable summary of Dataset contents (counts per Label, per Burst, per Contributor_ID, and warnings).
 - **Split**: A partition of the Dataset into train, validation, and test subsets.
-- **Test_Split**: The Split that holds out at least one whole Contributor and is used only for evaluation and model selection.
+- **Test_Split**: The Split that holds out at least one whole Contributor, chosen by Test_Contributor_IDs, and is used only for evaluation and model selection.
 - **Validation_Split**: The Split used for early stopping, drawn by whole Bursts from the Contributors not in the Test_Split.
 - **Train_Split**: The remaining Samples, the only Split to which augmentation is applied.
-- **Split_Seed**: The integer seed from which all Splits are derived deterministically.
+- **Split_Seed**: The integer seed that drives Validation_Split Burst selection deterministically.
+- **Training_Seed**: The integer seed in the Training_Config from which the shuffle seed, the augmentation seed, and every kernel, depthwise, and pointwise initialiser seed are derived. Dropout layers are not seeded.
 - **Landmark_MLP**: Candidate_Model A, a multilayer perceptron on the Feature_Vector.
 - **Silhouette_CNN**: Candidate_Model B, a small MobileNet-style convolutional network built from depthwise-separable convolutions on 96x96 single-channel Shadow_Masks.
 - **Candidate_Model**: Either the Landmark_MLP or the Silhouette_CNN.
@@ -98,7 +103,7 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 11. WHEN the Feature_Vector rebuilt from raw data differs from the stored Normalized_Landmarks by more than the tolerance in the Training_Config, THE Training_Pipeline SHALL record a warning for that Sample and SHALL keep the rebuilt values.
 12. WHEN loading finishes, THE Training_Pipeline SHALL return a load report listing files read, files rejected, Samples accepted, Samples skipped, and the reason for each rejection or skip.
 13. IF no valid Sample remains after loading, THEN THE Training_Pipeline SHALL stop with an error that states the Raw_Data_Folder path and the load report.
-14. THE repository SHALL list `data/raw/` in `.gitignore` so that Export_Files are never committed.
+14. THE repository SHALL list `data/raw/` and `data/contributors.json` in `.gitignore` so that Export_Files and the Contributor_Registry are never committed, and SHALL NOT ignore `/.kiro` or any of its subfolders, as verifiable with `git check-ignore`.
 
 ### Requirement 3: Dataset Report
 
@@ -108,11 +113,18 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 
 1. WHEN the Dataset_Report is requested, THE Training_Pipeline SHALL report, for each of the seven Labels, the number of Samples and the number of Bursts.
 2. WHEN the Dataset_Report is requested, THE Training_Pipeline SHALL report, for each Contributor_ID, the number of Samples per Label.
-3. THE Training_Pipeline SHALL assign Contributor_IDs of the form `C1`, `C2`, and so on, by sorting distinct contributor names in ascending order, so that the same set of names always yields the same Contributor_IDs.
-4. THE Training_Pipeline SHALL omit contributor names from the Dataset_Report, the Evaluation_Report, and all log output.
+3. THE Training_Pipeline SHALL assign Contributor_IDs of the form `C1`, `C2`, and so on, through the Contributor_Registry at `data/contributors.json`, so that a Contributor name whose Normalised_Name is already in the Contributor_Registry keeps its Contributor_ID and a Contributor name whose Normalised_Name is not yet in the Contributor_Registry receives the next unused Contributor_ID (`C{n+1}`, where n is the highest assigned number).
+4. THE Training_Pipeline SHALL omit contributor names from the Dataset_Report, the Evaluation_Report, and all log output, so that names appear only in the Contributor_Registry.
 5. IF a Label has fewer Samples than the minimum in the Training_Config (default 250), THEN THE Training_Pipeline SHALL add a warning to the Dataset_Report that names the Label and its Sample count.
 6. IF one Contributor_ID supplies more than the share in the Training_Config (default 50 percent) of a Label's Samples, THEN THE Training_Pipeline SHALL add a warning to the Dataset_Report that names the Label and the Contributor_ID.
 7. WHEN the Dataset_Report is requested, THE Training_Pipeline SHALL write the report as JSON and print a readable summary.
+8. THE Training_Pipeline SHALL treat the Contributor_Registry as append-only, so that no existing entry is changed, renumbered, or removed.
+9. IF `data/contributors.json` does not exist, THEN THE Training_Pipeline SHALL create it and SHALL assign `C1` to the first new Contributor name.
+10. IF `data/contributors.json` cannot be parsed or contains duplicate Contributor_IDs, THEN THE Training_Pipeline SHALL stop with an error that names the file and the problem and SHALL leave the file unchanged.
+11. THE Dataset_Report and the repository README SHALL state that Samples labeled `none` should include a pointing index finger and a relaxed open hand, because later specs use those poses for pointing and puppeteering and they must classify as `none`.
+12. WHEN the Dataset_Report is requested, THE Training_Pipeline SHALL include the `none` guidance from criterion 11 in the readable summary.
+13. WHEN the Training_Pipeline looks up a Contributor name in the Contributor_Registry, THE Training_Pipeline SHALL first remove leading and trailing whitespace and SHALL compare names case-insensitively, so that names differing only by case or surrounding whitespace map to the same Contributor_ID.
+14. WHEN a Normalised_Name is added to the Contributor_Registry, THE Training_Pipeline SHALL store the first-seen Display_Name and SHALL keep that Display_Name unchanged when later names with the same Normalised_Name occur.
 
 ### Requirement 4: Leak-Free Splitting
 
@@ -121,15 +133,19 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 #### Acceptance Criteria
 
 1. THE Training_Pipeline SHALL hold out at least one whole Contributor in the Test_Split.
-2. THE Training_Pipeline SHALL assign every Sample of a Contributor to the same Split as that Contributor's other Samples, so that no Contributor appears in both the Train_Split and the Test_Split.
-3. THE Training_Pipeline SHALL draw the Validation_Split from the Contributors not in the Test_Split by selecting whole Bursts, so that no Burst appears in more than one Split.
-4. THE Training_Pipeline SHALL NOT split the Dataset by individual Sample.
-5. WHEN the Training_Pipeline builds Splits twice from the same Dataset and the same Split_Seed, THE Training_Pipeline SHALL produce identical Splits.
-6. THE Training_Pipeline SHALL record the Split_Seed, the Contributor_IDs in each Split, and the Sample and Burst counts per Label in each Split in the Dataset_Report.
-7. IF the Dataset contains fewer than two Contributors, THEN THE Training_Pipeline SHALL stop with an error that states a leak-free Test_Split needs at least two Contributors.
-8. IF a Label has no Samples in the Test_Split, THEN THE Training_Pipeline SHALL add a warning to the report that names the Label.
-9. WHEN the Validation_Split is drawn, THE Training_Pipeline SHALL select Bursts per Label so that each Label with at least two Bursts among the non-test Contributors appears in the Validation_Split.
-10. THE Training_Pipeline SHALL apply augmentation to the Train_Split only.
+2. THE Training_Pipeline SHALL read the Test_Contributor_IDs from `training/training-config.ts` and SHALL place every Sample of each listed Contributor_ID in the Test_Split, without choosing Test_Split Contributors by name sort order or by random shuffle of names.
+3. IF the Test_Contributor_IDs list is empty, THEN THE Training_Pipeline SHALL stop with an error that states at least one Contributor_ID is required.
+4. IF any configured Test_Contributor_ID is absent from the Dataset, THEN THE Training_Pipeline SHALL stop with an error that names the missing Contributor_IDs and lists the Contributor_IDs present in the Dataset.
+5. IF the configured Test_Contributor_IDs include every Contributor_ID in the Dataset, THEN THE Training_Pipeline SHALL stop with an error that states the Train_Split would be empty.
+6. THE Training_Pipeline SHALL assign every Sample of a Contributor to the same Split as that Contributor's other Samples, so that no Contributor appears in both the Train_Split and the Test_Split.
+7. THE Training_Pipeline SHALL draw the Validation_Split from the Contributors not in the Test_Split by selecting whole Bursts using the Split_Seed, so that no Burst appears in more than one Split.
+8. THE Training_Pipeline SHALL NOT split the Dataset by individual Sample.
+9. WHEN the Training_Pipeline builds Splits twice from the same Dataset, the same Test_Contributor_IDs, and the same Split_Seed, THE Training_Pipeline SHALL produce identical Splits.
+10. THE Training_Pipeline SHALL record the Split_Seed, the Test_Contributor_IDs, the Contributor_IDs in each Split, and the Sample and Burst counts per Label in each Split in the Dataset_Report.
+11. IF the Dataset contains fewer than two Contributors, THEN THE Training_Pipeline SHALL stop with an error that states a leak-free Test_Split needs at least two Contributors.
+12. IF a Label has no Samples in the Test_Split, THEN THE Training_Pipeline SHALL add a warning to the report that names the Label.
+13. WHEN the Validation_Split is drawn, THE Training_Pipeline SHALL select Bursts per Label so that each Label with at least two Bursts among the non-test Contributors appears in the Validation_Split.
+14. THE Training_Pipeline SHALL apply augmentation to the Train_Split only.
 
 ### Requirement 5: Two Candidate Models
 
@@ -142,9 +158,12 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 3. THE Training_Pipeline SHALL build the Silhouette_CNN with a 96x96x1 input, depthwise-separable convolution blocks, and a 7-way softmax output in Label order.
 4. THE Training_Pipeline SHALL scale Shadow_Mask bytes to the range 0 to 1 for the Silhouette_CNN input.
 5. THE Training_Pipeline SHALL read every hyperparameter (epochs, batch size, learning rate, layer sizes, dropout, early-stopping patience, augmentation settings, seed) from the Training_Config.
-6. WHEN the Training_Pipeline trains a Candidate_Model twice with the same Dataset, Training_Config, and Training_Backend, THE Training_Pipeline SHALL produce the same Split and the same initial weights.
-7. THE Training_Pipeline SHALL use the Validation_Split for early stopping and SHALL NOT use the Test_Split for any training decision.
-8. WHEN the Training_Pipeline trains a Candidate_Model, THE Training_Pipeline SHALL dispose of all intermediate tensors so that tensor count after training equals the count before training plus the model's own weights.
+6. WHEN the Training_Pipeline trains a Candidate_Model twice with the same Dataset, Training_Config, and Training_Backend, THE Training_Pipeline SHALL produce the same Split, the same shuffle order, the same augmentation, and the same initial weights.
+7. THE Training_Pipeline SHALL derive a distinct seed from the Training_Seed for the data shuffle, for the augmentation, for every dense and convolution kernel initialiser, and for every depthwise and pointwise kernel initialiser, and SHALL drive the Split with the Split_Seed.
+8. THE Training_Pipeline SHALL guarantee reproducibility only within the same Training_Backend, and SHALL NOT guarantee identical results across Training_Backends.
+9. THE Training_Pipeline SHALL use the Validation_Split for early stopping and SHALL NOT use the Test_Split for any training decision.
+10. WHEN the Training_Pipeline trains a Candidate_Model, THE Training_Pipeline SHALL dispose of all intermediate tensors so that tensor count after training equals the count before training plus the model's own weights.
+11. THE Training_Pipeline SHALL leave dropout layers unseeded, so that dropout is the one source of run-to-run variation, and two runs with the same Training_Seed SHALL match in initial weights but MAY differ in final weights.
 
 ### Requirement 6: Evaluation and Model Selection
 
@@ -174,6 +193,9 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 4. WHEN the Exported_Model is saved, THE Training_Pipeline SHALL load the saved files back and SHALL verify that predictions on the Test_Split match the in-memory model within a floating-point tolerance in the Training_Config.
 5. THE repository SHALL track `public/models/classifier/` in version control while `public/models/hand_landmarker.task` stays ignored.
 6. WHEN the Training_Pipeline writes the Exported_Model, THE Training_Pipeline SHALL produce the same file layout regardless of the Training_Backend.
+7. THE repository `.gitignore` SHALL un-ignore `public/models/classifier/` while `public/models/hand_landmarker.task` and `public/wasm/` remain ignored, as verifiable with `git check-ignore`.
+8. THE test suite SHALL include a required export round-trip test that saves a small model with the Training_Pipeline's custom model writer, loads the saved files with `tf.loadLayersModel`, which is the loader the Predictor uses in the browser, and verifies that predictions on fixed inputs match the in-memory model within the floating-point tolerance in the Training_Config.
+9. IF the export round-trip test fails, THEN THE test suite SHALL report the failure, and THE Training_Pipeline SHALL NOT treat the Exported_Model writer as verified.
 
 ### Requirement 8: Node Training Runtime, Backends, and Wrappable API
 
@@ -183,14 +205,17 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 
 1. THE Training_Pipeline SHALL be written in TypeScript and SHALL run on Node with TensorFlow.js.
 2. WHEN the Training_Pipeline selects a Training_Backend, THE Training_Pipeline SHALL prefer `tfjs-node` and SHALL verify it by running a small tensor operation before use.
-3. IF `@tensorflow/tfjs-node` fails to install, fails to load, or fails the verification operation, THEN THE Training_Pipeline SHALL fall back to the `wasm` backend and, if that fails, to the `cpu` backend.
+3. IF `@tensorflow/tfjs-node` fails to install, fails to load, or fails the verification operation, THEN THE Training_Pipeline SHALL fall back in the order `tfjs-node`, then `wasm`, then `cpu`, verifying each backend before use.
 4. WHEN the Training_Pipeline selects a Training_Backend, THE Training_Pipeline SHALL log the chosen backend and the reason for any fallback.
 5. WHERE the caller names a Training_Backend, THE Training_Pipeline SHALL use that backend or stop with an error if it is unavailable.
-6. THE Training_Pipeline SHALL produce results that differ between Training_Backends only by normal floating-point differences.
+6. THE Training_Pipeline SHALL guarantee identical results for repeated runs only within the same Training_Backend, and results across Training_Backends MAY differ by floating-point differences.
 7. THE repository SHALL provide npm scripts named `train`, `evaluate`, and `dataset:report`.
 8. THE Training_API SHALL export functions for dataset statistics, building Splits, training a Candidate_Model, evaluating a Candidate_Model, returning a Confusion_Matrix, and returning misclassified Samples.
 9. THE Training_API SHALL return structured results as plain JSON-serializable objects and SHALL NOT call `process.exit` or write to the console except through an injectable logger.
 10. THE Training_Pipeline SHALL reuse the shared FeatureExtractor and mask codec so that training input equals live input.
+11. WHEN the `train` command starts, THE `train` command SHALL print which Training_Backend it chose (`tfjs-node`, `wasm`, or `cpu`).
+12. THE repository README SHALL document that running under Node 22 LTS enables `tfjs-node` for faster training.
+13. THE repository SHALL NOT contain an `engines` field in `package.json` or an `.nvmrc` file for the purpose of pinning the Node version.
 
 ### Requirement 9: Runtime Predictor
 
@@ -242,6 +267,10 @@ All webcam processing stays on-device. Raw dataset exports are local-only and ar
 6. FOR ALL frame sequences, each fired Shape_Event's label SHALL equal the Label of the Stable_Run that produced it.
 7. FOR ALL generated Datasets with at least two Contributors, THE Split builder SHALL place no Contributor in both the Train_Split and the Test_Split and SHALL place no Burst in more than one Split.
 8. FOR ALL seven Labels, mapping a Label to its Label_Index and back SHALL return the original Label.
+9. FOR ALL Contributor_Registry states and all lists of new Contributor names, adding the new names SHALL leave every existing Contributor name's Contributor_ID unchanged (stable-ID property).
+10. FOR ALL lists of Contributor names, assigning Contributor_IDs twice through the same Contributor_Registry SHALL return the same Contributor_ID for each existing name and SHALL NOT add entries on the second pass (idempotence and determinism); FOR ALL such lists, names that differ only by case or leading and trailing whitespace SHALL map to the same Contributor_ID, and the stored Display_Name for each Contributor_ID SHALL equal the first-seen name.
+11. FOR ALL generated Datasets and Test_Contributor_IDs present in the Dataset, THE Split builder SHALL place exactly the Samples of the Test_Contributor_IDs in the Test_Split.
+12. THE test suite SHALL include the export round-trip test defined in Requirement 7, criterion 8, as a required test.
 
 ### Requirement 12: Classifier Debug View
 

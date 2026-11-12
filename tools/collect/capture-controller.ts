@@ -5,8 +5,8 @@
 // Req 10.1-10.5, 14.1, 14.2, 9.3, 11.10.
 
 import { config as defaultConfig, type Config } from '../../src/config';
-import { extractFeatures } from './feature-extractor';
-import { encodeMask, type MaskGenerator } from './mask-generator';
+import { extractFeatures } from '../../src/vision/feature-extractor';
+import { encodeMask, type MaskGenerator } from '../../src/vision/mask-generator';
 import type { SampleStore } from './sample-store';
 import type { ExtractedFeatures, FrameResult, Label, Sample } from './types';
 

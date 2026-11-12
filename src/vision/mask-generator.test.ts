@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { config } from '../../src/config';
-import { handScalePx } from '../../src/vision/silhouette-renderer';
-import type { RenderOptions, SilhouetteRenderer } from '../../src/vision/silhouette-renderer';
+import { config } from '../config';
+import { handScalePx } from './silhouette-renderer';
+import type { RenderOptions, SilhouetteRenderer } from './silhouette-renderer';
 import { extractFeatures } from './feature-extractor';
 import {
   computeCropRect,

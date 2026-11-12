@@ -1,0 +1,84 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Move FeatureExtractor and MaskGenerator into `src/vision/`": [
+      {
+        "executionId": "55385b0e-df14-4c3e-bbfd-54d0b0751c61",
+        "chatSessionId": "sess_2105902e-65d0-489a-a32a-631847f5da20",
+        "timestamp": 1794502842655
+      },
+      {
+        "executionId": "55385b0e-df14-4c3e-bbfd-54d0b0751c61",
+        "chatSessionId": "sess_2105902e-65d0-489a-a32a-631847f5da20",
+        "timestamp": 1794503015805
+      }
+    ],
+    "1.2 Add dependencies, npm scripts, and TypeScript/test config for training": [
+      {
+        "executionId": "5b7326d5-277e-4a7f-a9eb-9c32e8428879",
+        "chatSessionId": "sess_fd0d15fb-752d-4986-ac45-6e97a39f31e3",
+        "timestamp": 1794503040048
+      },
+      {
+        "executionId": "5b7326d5-277e-4a7f-a9eb-9c32e8428879",
+        "chatSessionId": "sess_fd0d15fb-752d-4986-ac45-6e97a39f31e3",
+        "timestamp": 1794503260842
+      }
+    ],
+    "1.3 Update steering structure doc": [
+      {
+        "executionId": "3bcfdc3b-efcd-45ee-9025-afb1b13422d2",
+        "chatSessionId": "sess_5875b576-7426-4c92-bc28-93057562f79b",
+        "timestamp": 1794506097313
+      },
+      {
+        "executionId": "3bcfdc3b-efcd-45ee-9025-afb1b13422d2",
+        "chatSessionId": "sess_5875b576-7426-4c92-bc28-93057562f79b",
+        "timestamp": 1794509578254
+      }
+    ],
+    "1.4 Update `.gitignore` with the exact rules from the design": [
+      {
+        "executionId": "58da7ecd-42aa-4e8c-8ba5-dae0ac4d439a",
+        "chatSessionId": "sess_c7e07fab-06f8-4ba1-b3e2-5ea30e401173",
+        "timestamp": 1794509653866
+      },
+      {
+        "executionId": "58da7ecd-42aa-4e8c-8ba5-dae0ac4d439a",
+        "chatSessionId": "sess_c7e07fab-06f8-4ba1-b3e2-5ea30e401173",
+        "timestamp": 1794509842295
+      }
+    ],
+    "1.5 Write repository hygiene test": [
+      {
+        "executionId": "3fc015ba-989d-497b-82da-469b577b28dd",
+        "chatSessionId": "sess_f9717164-becd-4513-850d-fdb9fcea4414",
+        "timestamp": 1794509875209
+      },
+      {
+        "executionId": "3fc015ba-989d-497b-82da-469b577b28dd",
+        "chatSessionId": "sess_f9717164-becd-4513-850d-fdb9fcea4414",
+        "timestamp": 1794510031937
+      }
+    ],
+    "1.6 Early check: `loadLayersModel(url, { fetchFunc })` in Node with a fake fetch": [
+      {
+        "executionId": "641154ac-7d88-4ea4-894b-7b0e0c791ec8",
+        "chatSessionId": "sess_79c59ab4-d424-45b2-91a1-fca5b5f48abc",
+        "timestamp": 1794510064936
+      },
+      {
+        "executionId": "641154ac-7d88-4ea4-894b-7b0e0c791ec8",
+        "chatSessionId": "sess_79c59ab4-d424-45b2-91a1-fca5b5f48abc",
+        "timestamp": 1794510107355
+      }
+    ],
+    "1. Relocation, tooling, repository housekeeping, and early checks": [
+      {
+        "executionId": "641154ac-7d88-4ea4-894b-7b0e0c791ec8",
+        "chatSessionId": "sess_79c59ab4-d424-45b2-91a1-fca5b5f48abc",
+        "timestamp": 1794510107438
+      }
+    ]
+  }
+}

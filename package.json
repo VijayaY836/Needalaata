@@ -9,16 +9,25 @@
     "preview": "vite preview",
     "test": "vitest --run",
     "typecheck": "tsc --noEmit",
+    "dataset:report": "tsx training/cli/dataset-report.ts",
+    "train": "tsx training/cli/train.ts",
+    "evaluate": "tsx training/cli/evaluate.ts",
     "postinstall": "node scripts/setup-assets.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.5",
     "fast-check": "4.10.2",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vite": "8.3.6",
     "vitest": "5.1.0"
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "1.2.2"
+    "@mediapipe/tasks-vision": "1.2.2",
+    "@tensorflow/tfjs": "4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "4.22.0"
+  },
+  "optionalDependencies": {
+    "@tensorflow/tfjs-node": "4.22.0"
   }
 }

@@ -7,7 +7,7 @@ import {
   parseExport,
   serializeExport,
 } from './exporter';
-import { decodeMask, encodeMask } from './mask-generator';
+import { decodeMask, encodeMask } from '../../src/vision/mask-generator';
 import { LABELS } from './types';
 import type { HandSlot, Landmark, Sample } from './types';
 

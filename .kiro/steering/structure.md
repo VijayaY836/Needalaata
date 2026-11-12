@@ -13,12 +13,15 @@ inclusion: always
 │   └── audio/              # original or properly licensed sounds only
 ├── tools/
 │   └── collect/            # data-collection page for recording hand-shadow samples
-├── training/               # notebook/scripts to train + export the classifier
+├── training/               # TypeScript scripts (run on Node with TF.js) to train + export the classifier
+├── data/
+│   ├── raw/                # local Export_Files from the collection tool – gitignored
+│   └── contributors.json   # append-only contributor registry – gitignored
 ├── src/
 │   ├── main.ts             # app bootstrap
 │   ├── config.ts           # all tunable constants
 │   ├── vision/             # camera, HandLandmarker, segmentation (NO game logic)
-│   ├── ml/                 # feature extraction, classifier loading, debounced predictions
+│   ├── classifier/         # feature extraction, classifier loading, debounced predictions
 │   ├── story/              # flow state machine: theatre → lamp → choose tale → perform → revive; tales/ holds each tale
 │   ├── puppets/            # puppet registry + rigs; one file per character
 │   ├── stage/              # PixiJS scene: screen, lamp, colored shadows, particles
@@ -29,7 +32,7 @@ inclusion: always
 
 ## Boundaries
 - `vision/` emits landmarks and masks. It knows nothing about puppets.
-- `ml/` turns landmarks/masks into `{ label, confidence }` events.
+- `classifier/` turns landmarks/masks into `{ label, confidence }` events.
 - `story/` listens to those events and decides what happens.
 - `puppets/` and `stage/` only render what `story/` tells them.
 

@@ -4,22 +4,28 @@
 
 This design adds the hand-shadow classifier to Needalaata. It has an offline half (`training/`, Node + TypeScript + TensorFlow.js) and a runtime half (`src/classifier/`, browser). Both halves import the same `FeatureExtractor` and mask codec from `src/vision/`, so training input equals live input and there is no train/serve skew.
 
-The offline half loads the Spec 1 export files from the gitignored `data/raw/`, validates them, builds leak-free splits (test = whole contributors, validation = whole bursts), trains a Landmark MLP and a depthwise-separable Silhouette CNN, evaluates both on the held-out contributors, picks the better one, and exports it to `public/models/classifier/` with a metadata file. The runtime half loads that export, classifies each `FrameResult`, debounces the stream, and emits `{label, confidence, timestamp}` events through `onShape(...)`. A debug overlay (key C) shows the live prediction and recent events.
+The offline half loads the Spec 1 export files from the gitignored `data/raw/`, validates them, maps contributor names to stable anonymised IDs through the gitignored `data/contributors.json`, builds leak-free splits (test = the whole contributors named by ID in `training/training-config.ts`, validation = whole bursts picked with the seed), trains a Landmark MLP and a depthwise-separable Silhouette CNN, evaluates both on the held-out contributors, picks the better one, and exports it to `public/models/classifier/` with a metadata file. The runtime half loads that export, classifies each `FrameResult`, debounces the stream, and emits `{label, confidence, timestamp}` events through `onShape(...)`. A debug overlay (key C) shows the live prediction and recent events.
 
 ### Key design decisions
 
 - **One language, one implementation.** Training runs in TypeScript on Node. It imports `src/vision/feature-extractor.ts` and the `encodeMask`/`decodeMask` codec directly. A Python pipeline would force a second implementation of the slot rule, Hand_Scale normalization, and mask decoding, and any drift would silently lower live accuracy. Spec 1's fast-check Properties 1 to 12 then protect both training and serving.
 - **Move, do not copy.** `FeatureExtractor` and `MaskGenerator` move from `tools/collect/` to `src/vision/`. The mask codec (`encodeMask`, `decodeMask`) and the pure crop helpers have no top-level DOM access, so Node can import them. Only `createMaskGenerator().generate()` needs a canvas, and training never calls it because it uses the stored masks.
-- **Backend is a runtime decision, not an install-time assumption.** `@tensorflow/tfjs-node` is preferred but optional, verified with a smoke operation, and followed by `wasm` then `cpu` fallbacks (see Research Findings). Model export uses one custom writer so the files are identical for every backend.
-- **Reproducibility by construction.** All randomness comes from a seeded PRNG (`mulberry32`) owned by the pipeline and from seeded TensorFlow.js initializers. TensorFlow.js `fit({shuffle: true})` is not used, because its shuffle is not seedable through a documented option. The pipeline shuffles itself and calls `fit` one epoch at a time with `shuffle: false`.
+- **Backend is a runtime decision, not an install-time assumption.** `@tensorflow/tfjs-node` is preferred but optional, verified with a smoke operation, and followed by `wasm` then `cpu` fallbacks (see Research Findings). The `train` command prints the backend it chose. Model export uses one custom writer so the files are identical for every backend.
+- **Reproducibility by construction, within one backend.** All randomness comes from seeds derived from one Training_Seed: a seeded PRNG (`mulberry32`) for the shuffle, the augmentation, and the validation-burst pick, plus an explicit seed on every kernel, depthwise, and pointwise initialiser. **Dropout layers are deliberately left unseeded** (decided; Requirement 5.11), so dropout is the one source of run-to-run variation: two runs with the same Training_Seed and backend match in split, shuffle order, augmentation, and initial weights, but their final weights may differ. TensorFlow.js `fit({shuffle: true})` is not used, because its shuffle is not seedable through a documented option. The pipeline shuffles itself and calls `fit` one epoch at a time with `shuffle: false`. Reproducibility is guaranteed only within the same Training_Backend. Results across `tfjs-node`, `wasm`, and `cpu` may differ by floating-point effects, and no test asserts otherwise.
+- **Contributors are people, so IDs must never move.** Names are matched after normalisation (`normaliseName`: trim, lower-case, NFC), so "Alice" and " alice " are one person. Names live only in the gitignored, append-only `data/contributors.json`, which stores the first-seen display name. Everything else (reports, logs, splits, config) uses `C1`, `C2`, and so on. The test contributors are chosen explicitly by ID in `training/training-config.ts`, not by sort order or shuffle, so a new contributor can never silently change which people are held out.
 - **Pure logic is separated from TensorFlow.** Splitting, metrics, selection, backend choice, debouncing, label encoding, and feature-vector building are pure functions, so they are property-tested cheaply. TensorFlow.js calls sit behind thin adapters.
 - **Library first, CLI second.** Every npm script is a thin wrapper over a function exported from `training/api.ts`, so a future Shadow Lab MCP server can call the same functions.
+
+### Interaction model
+
+This is a note for dataset design only. It adds no runtime feature to this spec. In later specs, users point with the index finger and relax their hand while puppeteering. Those poses must therefore classify as `none`, so the theatre never mistakes a pointing finger or a resting hand for a shadow shape. The classifier already treats `none` as a class that never fires a Shape_Event (Requirement 10.2), so the work here is in the data: the `none` label needs enough pointing-finger and relaxed-open-hand samples. The dataset report's readable summary and the README carry the same guidance text (`NONE_GUIDANCE`, section 6a), and the evaluation report's most-confused pairs will show it if a shape such as `bird` (open hand) is being confused with a relaxed hand.
 
 ### Deviations from steering docs (flagged)
 
 - `structure.md` lists `src/ml/` and `training/` as notebook/scripts. This spec uses `src/classifier/` for the runtime (as requested) and `training/` for TypeScript scripts. Task 1.3 updates `structure.md` so the docs match.
 - `tech.md` says every tunable number lives in `src/config.ts`. Runtime numbers (Stable_Frame_Count, Confidence_Threshold, log length, inference budget, model paths) do. Offline training hyperparameters live in the single `training/training-config.ts`, because they run only in Node and must not be bundled into the browser build. The spec requirement is "one training config".
-- `.gitignore` currently ignores all of `public/models/`. Task 1.4 un-ignores `public/models/classifier/` (and keeps `hand_landmarker.task` ignored) and adds `data/raw/`.
+- `.gitignore` currently ignores all of `public/models/`. Task 1.4 replaces that rule so `public/models/classifier/` is tracked while `hand_landmarker.task` and `public/wasm/` stay ignored, and adds `data/raw/`, `data/contributors.json`, and `training/out/`. The exact rules are in "Git ignore rules" below.
+- `engines` and `.nvmrc`: this spec adds neither (Requirement 8.13). Node 22 LTS is only documented in the README as the version that should enable `tfjs-node`.
 - `tech.md` says "transfer learning on MobileNet". This spec trains a small MobileNet-style CNN from scratch (depthwise-separable blocks), as requested, because the input is a 96x96 single-channel mask and a pretrained RGB MobileNet would add megabytes and a network download. The design keeps the option open in Future Work.
 
 ## Research Findings
@@ -29,15 +35,22 @@ All TensorFlow.js APIs below were checked against the TensorFlow.js docs through
 | Topic | Finding | Source / verification |
 |---|---|---|
 | Layers | `tf.layers.separableConv2d` (depthwise then pointwise, options `depthMultiplier`, `depthwiseInitializer`, `pointwiseInitializer`) and `tf.layers.depthwiseConv2d` exist. | [TF.js API](https://js.tensorflow.org/api/latest); local run built a `separableConv2d` model on the CPU backend |
-| Seeding | `tf.initializers.glorotUniform({seed})` takes a seed; `tf.layers.dropout({rate, seed})` accepts a seed. Two models built with the same seeds had identical weights. | API docs; local run |
+| Seeding | `tf.initializers.glorotUniform({seed})` takes a seed; `tf.layers.dropout({rate, seed})` also accepts one, but the design does not use it (dropout is left unseeded by decision). Two models built with the same initialiser seeds had identical weights. | API docs; local run |
 | Save/load | `model.save(handlerOrURL)` and `tf.loadLayersModel(pathOrIOHandler)`. `file://` URLs need `tfjs-node`; on pure-JS backends the error is "Cannot find any save handlers". `tf.io.withSaveHandler(fn)` captures `modelTopology`, `weightSpecs`, `weightData`, and `tf.io.fromMemory(artifacts)` reloads them. A tiny model round-tripped with identical predictions. | local run |
+| IO API surface | `tf.io` exports `withSaveHandler`, `withSaveHandlerSync`, `fromMemory`, `fromMemorySync`, `http`, `browserHTTPRequest`, `browserFiles`, `getWeightSpecs`, `getModelArtifactsForJSON`, `getModelArtifactsForJSONSync`, `concatenateArrayBuffers`, and the types `IOHandler`, `ModelArtifacts`, `ModelJSON`, `SaveResult`, `WeightsManifestEntry`. | [tfjs-core `io.ts`](https://github.com/tensorflow/tfjs/blob/master/tfjs-core/src/io/io.ts) (read through Context7 and the repo source) |
+| `withSaveHandler` | Takes `(artifacts: ModelArtifacts) => Promise<SaveResult>` and returns an `IOHandler` with only `save`. The `SaveResult` must contain `modelArtifactsInfo` (`dateSaved`, `modelTopologyType`, optional byte counts). | [tfjs-core `passthrough.ts`](https://github.com/tensorflow/tfjs/blob/master/tfjs-core/src/io/passthrough.ts), [`types.ts`](https://github.com/tensorflow/tfjs/blob/master/tfjs-core/src/io/types.ts) |
+| `fromMemory` | Single-argument form takes a `ModelArtifacts` object and returns an `IOHandler` whose `load()` returns it. The multi-argument form `(topology, weightSpecs, weightData)` is deprecated and warns, so the design uses the single-argument form. | `passthrough.ts` |
+| `ModelArtifacts` shape | Optional fields `modelTopology`, `weightSpecs: WeightsManifestEntry[]`, `weightData: ArrayBuffer \| ArrayBuffer[]`, `trainingConfig`, `format`, `generatedBy`, `convertedBy`, `userDefinedMetadata`. `ModelJSON` (the `model.json` on disk) has `modelTopology` and `weightsManifest` (groups of `{paths, weights}`) plus the same optional metadata fields. | `types.ts` |
+| `loadLayersModel` | Accepts a URL string or an `IOHandler`; the options include `fetchFunc` and `weightPathPrefix`. Docs show loading from an HTTP URL, `localstorage://`, `indexeddb://`, and `tf.io.browserFiles`. | [TF.js API](https://js.tensorflow.org/api/latest) via Context7 |
+| `tf.io.http` | The documented API page lists `tf.io.http(path, loadOptions?)`. The source also exports `browserHTTPRequest`; the design avoids calling either directly and lets `tf.loadLayersModel(urlString)` route to it. | API docs, `io.ts` |
+| Not verified | Whether `loadLayersModel(url, { fetchFunc })` works end to end in Node with a fake `fetch` that serves temp-directory files. The earlier open question about whether a fixed dropout seed repeats its mask is resolved by decision: dropout is unseeded, so it needs no check. The `fetchFunc` question is checked by a test in task 1 (see Export section). | not run here |
 | Memory | `tf.tidy(fn)` disposes intermediates except returned tensors. `tf.memory().numTensors` gives the live tensor count. | API docs |
 | Early stopping | `tf.callbacks.earlyStopping` exists but `restoreBestWeights: true` is documented as not supported. The pipeline implements early stopping itself and snapshots the best weights. | API docs |
 | WASM backend | `import '@tensorflow/tfjs-backend-wasm'` then `tf.setBackend('wasm')` works under Node 26 without extra setup. | [tfjs-backend-wasm README](https://github.com/tensorflow/tfjs/blob/master/tfjs-backend-wasm/README.md); local run |
 | tfjs-node on Apple Silicon | Historically failed to install on arm64 ([issue 4514](https://github.com/tensorflow/tfjs/issues/4514)). `@tensorflow/tfjs-node@4.22.0` now installs on this machine (npm blocks the package's install script until it is approved or `npm rebuild @tensorflow/tfjs-node` is run). **However**, with Node v26.13.0 the native module loads (`tf.getBackend()` reports `tensorflow`) but the first kernel call throws `util_1.isNullOrUndefined is not a function`, because that function was removed from recent Node versions. | local install and run |
 | Latest versions | `@tensorflow/tfjs` and `@tensorflow/tfjs-node` and `@tensorflow/tfjs-backend-wasm` are all 4.22.0 (latest). | `npm view` |
 
-**Consequences.** (1) "Installs" is not "works", so the backend selector runs a smoke operation (`tf.ones([2]).sum()`) after loading. (2) On this machine today the selector will land on `wasm`. (3) Running training on Node 22 LTS should allow `tfjs-node`; this was not verified here. A `.nvmrc` is not added, because it would be an untested claim. (4) All three TensorFlow.js packages are pinned to exactly 4.22.0 so they share one `tfjs-core` singleton.
+**Consequences.** (1) "Installs" is not "works", so the backend selector runs a smoke operation (`tf.ones([2]).sum()`) after loading. (2) On this machine today the selector will land on `wasm`. (3) Running training on Node 22 LTS should allow `tfjs-node`; this was not verified here, and the README says so. Neither an `.nvmrc` nor an `engines` field is added, because either would pin or enforce an untested claim. (4) All three TensorFlow.js packages are pinned to exactly 4.22.0 so they share one `tfjs-core` singleton.
 
 Content from web sources was summarized, not quoted.
 
@@ -61,8 +74,10 @@ flowchart TB
         LOAD[dataset/loader + validator] --> FV[classifier/feature-vector]
         LOAD --> MG
         LOAD --> FE
-        LOAD --> REP[dataset/report]
-        LOAD --> SPL[split.ts]
+        LOAD --> REG[dataset/contributors.ts<br/>assignContributorIds + load/save]
+        REG <--> CJ[(data/contributors.json<br/>gitignored, append-only)]
+        REG --> REP[dataset/report]
+        REG --> SPL[split.ts<br/>test = configured IDs]
         SPL --> AUG[augment.ts train only]
         AUG --> MLP[models/mlp.ts]
         AUG --> CNN[models/cnn.ts]
@@ -77,7 +92,8 @@ flowchart TB
         API --- SPL
         API --- EVAL
         CLI[cli: train / evaluate / dataset:report] --> API
-        TC[training-config.ts] -.-> Train
+        TC[training-config.ts<br/>split.testContributorIds] -.-> SPL
+        TC -.-> Train
     end
 
     subgraph Runtime["src/classifier/ (browser)"]
@@ -111,6 +127,7 @@ sequenceDiagram
     participant API as training/api.ts
     participant BE as backend.ts
     participant L as loader/validator
+    participant R as contributors.ts
     participant S as split.ts
     participant T as train (MLP, CNN)
     participant E as evaluate + select
@@ -119,10 +136,13 @@ sequenceDiagram
     CLI->>API: runTraining(options)
     API->>BE: selectBackend(preference)
     BE-->>API: tfjs-node | wasm | cpu (+ reason)
+    API-->>CLI: print chosen backend
     API->>L: loadDataset(paths)
-    L-->>API: samples + loadReport
-    API->>S: buildSplits(samples, seed)
-    S-->>API: train / val / test (+ ids)
+    L-->>API: samples (with names) + loadReport
+    API->>R: resolveContributors(names, data/contributors.json)
+    R-->>API: samples with C-ids only (registry saved if new names)
+    API->>S: buildSplits(samples, split config, seed)
+    S-->>API: train / val / test (+ ids), or a named error
     API->>T: trainMlp(split), trainCnn(split)
     T-->>API: two models
     API->>E: evaluate both on test, select
@@ -226,16 +246,22 @@ One module, one exported object, all numbers named:
 
 ```ts
 export interface TrainingConfig {
-  seed: number;                          // Split_Seed and model seed base
-  paths: { rawDir: 'data/raw'; reportDir: 'training/out'; exportDir: 'public/models/classifier' };
+  seed: number;                          // Training_Seed: base for shuffle, augmentation, and layer initialiser seeds (not dropout)
+  paths: {
+    rawDir: 'data/raw';
+    contributorRegistry: 'data/contributors.json';
+    reportDir: 'training/out';
+    exportDir: 'public/models/classifier';
+  };
   dataset: {
     minSamplesPerLabel: 250;
     maxContributorShare: 0.5;
     rebuildTolerance: number;            // |rebuilt - stored normalized| warn threshold
   };
   split: {
-    testContributorFraction: number;     // fraction of contributors, at least 1 contributor
-    validationBurstFraction: number;     // fraction of non-test bursts per label, at least 1 when label has >= 2 bursts
+    testContributorIds: string[];        // e.g. ['C1']; chosen by the trainer, never by sort or shuffle
+    seed: number;                        // Split_Seed: drives validation-burst selection only
+    validationBurstFraction: number;     // fraction of non-test bursts per label (see algorithm)
   };
   augmentation: {
     mlp: { landmarkJitter: number; scaleJitter: number; rotationDegrees: number; copies: number };
@@ -247,6 +273,8 @@ export interface TrainingConfig {
   export: { maxBytes: 5_242_880; reloadTolerance: number };
 }
 ```
+
+`split.testContributorIds` ships as `['C1']`. On a first run the registry assigns `C1` to the new name with the smallest normalised key (see section 6), so the trainer should open the Dataset_Report, decide which person to hold out, and edit this list. A configuration that holds out nobody, an ID that is not in the Dataset, or every contributor is an error (section 7), not a silent fallback.
 
 Defaults (starting points, tuned later from the report): MLP hidden `[128, 64]`, dropout 0.3; CNN filters `[8, 16, 32, 32]` with strides `[2, 2, 2, 1]`, dropout 0.3; Adam; early-stopping patience 8 on validation loss.
 
@@ -273,6 +301,8 @@ export async function initBackend(requested?: BackendName, logger?: Logger): Pro
 - `wasm` probe: `import('@tensorflow/tfjs-backend-wasm')`, `tf.setBackend('wasm')`, same smoke op.
 - `cpu` probe: `tf.setBackend('cpu')`.
 - `TRAIN_BACKEND` env var or `--backend` flag sets `requested`.
+- `training/cli/train.ts` prints one line right after `initBackend` returns and before loading data, for example `Training backend: wasm (tfjs-node unavailable: <reason>)` or `Training backend: tfjs-node`. The line comes from `BackendChoice`, so the same text is available to the API through the injected `Logger` (Requirements 8.4, 8.11).
+- The README documents that running under Node 22 LTS should enable `tfjs-node` for faster training. The README marks this as not verified on the author's machine (Requirement 8.12). The repository has no `engines` field in `package.json` and no `.nvmrc`; a test asserts both (Requirement 8.13).
 - `@tensorflow/tfjs-node` is an `optionalDependency`, so a failed native install does not break `npm install`.
 
 ### 5. Dataset loading and validation (`training/dataset/`)
@@ -287,67 +317,171 @@ export interface LoadReport {
   duplicates: { id: string; file: string }[];
   warnings: { id: string; reason: string }[];       // rebuild tolerance mismatches
 }
+// What the loader returns: still carries the free-text name, used only to resolve IDs.
+export interface LoadedSample extends Omit<ClassifierSample, 'contributorId'> { contributorName: string; }
+// What everything downstream sees: the name has been replaced by the registry ID.
 export interface ClassifierSample {
-  id: string; label: Label; contributor: string; burstId: string; sessionId: string;
+  id: string; label: Label; contributorId: string; burstId: string; sessionId: string;
   featureVector: Float32Array;        // rebuilt via shared extractor
   mask: Uint8Array;                   // stored, decoded via production decodeMask
   hands: FrameResult['hands'];        // kept so MLP augmentation can re-extract
   frameWidth: number; frameHeight: number;
 }
-export async function loadDataset(opts: LoadOptions): Promise<{ samples: ClassifierSample[]; report: LoadReport }>;
+export async function loadDataset(opts: LoadOptions): Promise<{ samples: LoadedSample[]; report: LoadReport }>;
 
 // Pure, per-file, never throws:
-export function validateExportDocument(doc: unknown, fileName: string): { samples: ClassifierSample[]; report: LoadReport };
+export function validateExportDocument(doc: unknown, fileName: string): { samples: LoadedSample[]; report: LoadReport };
 ```
 
-Validation steps per file: JSON parse (catch), metadata presence, `schemaVersion === SCHEMA_VERSION` imported from `tools/collect/exporter.ts`, `labels` deep-equal `LABELS`, `maskSize` 96x96. Per sample: label in `LABELS`, slots length 2 with 21 landmarks each, finite numbers, non-empty `burstId` and `contributor`, `decodeMask` succeeds. A try/catch wraps each sample so one bad sample is recorded and skipped. Duplicate ids keep the first.
+Validation steps per file: JSON parse (catch), metadata presence, `schemaVersion === SCHEMA_VERSION` imported from `tools/collect/exporter.ts`, `labels` deep-equal `LABELS`, `maskSize` 96x96. Per sample: label in `LABELS`, slots length 2 with 21 landmarks each, finite numbers, non-empty `burstId`, a `contributor` that is non-empty after trimming (a whitespace-only name is skipped as a missing name), `decodeMask` succeeds. A try/catch wraps each sample so one bad sample is recorded and skipped. Duplicate ids keep the first.
 
 **Rebuilding features.** Each stored sample is converted back to a `FrameResult` (`hands` = the present slots' `rawLandmarks`, handedness, score; `frameWidth`/`frameHeight` from the sample) and passed to the shared `extractFeatures`, then `buildFeatureVector`. Slot order is recomputed by the same rule, so the vector equals what the runtime produces. The stored `normalizedLandmarks` are compared with the rebuilt ones; a difference over `rebuildTolerance` adds a warning, and the rebuilt values win.
 
-### 6. Dataset report and contributor IDs (`training/dataset/report.ts`)
+### 6. Contributor registry (`training/dataset/contributors.ts`)
+
+The old design derived IDs from the sorted set of names, so adding a person whose name sorted early renumbered everyone and silently changed who was in the test set. The registry replaces that with a persistent, append-only mapping.
+
+**File: `data/contributors.json`** (gitignored; the only place a name is stored by the Training_Pipeline)
+
+```json
+{
+  "version": 1,
+  "contributors": [
+    { "name": "<free-text name as exported>", "id": "C1" },
+    { "name": "<another name>", "id": "C2" }
+  ]
+}
+```
+
+- `contributors` is an array in assignment order, so the file diff shows only appended entries.
+- `name` is the **Display_Name**: the name as first seen for that person, kept unchanged when later variants occur. `id` is the Contributor_ID.
+- The lookup key is the **Normalised_Name**, computed on the fly by `normaliseName` and **not stored**. Choice and reason: storing it would duplicate data that can be recomputed and could drift from `name`; computing it keeps the file format `{ name, id }` simple and lets one rule (`normaliseName`) define identity everywhere.
+- IDs match `^C[1-9][0-9]*$`.
+
+**`normaliseName` (explicit definition).**
 
 ```ts
-export type ContributorMap = Map<string, string>; // name -> 'C1'...
-export function assignContributorIds(names: Iterable<string>): ContributorMap; // sorted ascending, C1..Cn
+export function normaliseName(name: string): string;
+// name.trim().toLowerCase().normalize('NFC')
+```
+
+- `trim()` removes leading and trailing whitespace as JavaScript defines it (including non-breaking space and other Unicode space separators). Inner whitespace is kept.
+- `toLowerCase()` is the locale-independent, Unicode-aware lower-casing (not `toLocaleLowerCase`, so the result does not depend on the machine's locale). It handles non-ASCII letters such as `É` and `Σ`.
+- `normalize('NFC')` runs last so that composed and decomposed spellings of the same accented name (for example `é` as one code point or as `e` plus a combining accent) give the same key.
+- Limits, accepted deliberately: there is no further folding (no accent stripping, no `ß`/`ss` equivalence), so "José" and "Jose" are two contributors. Two people whose names differ only by case or surrounding whitespace are treated as one; the trainer fixes a real collision by changing the name at the collector.
+- A name whose Normalised_Name is empty (empty or whitespace only) is invalid. `assignContributorIds` throws `InvalidContributorNameError` for it, the loader skips such samples with the reason "missing contributor name" (Req 2.7), and a registry file containing one is invalid (see Load and save).
+
+**Pure assignment**
+
+```ts
+export interface ContributorRegistry { version: 1; contributors: { name: string; id: string }[]; }
+export const EMPTY_REGISTRY: ContributorRegistry;
+
+// Pure. Does not mutate its inputs. Returns a new registry.
+export function assignContributorIds(
+  names: Iterable<string>,
+  existingRegistry: ContributorRegistry,
+): ContributorRegistry;
+```
+
+Rules:
+
+1. Existing entries are copied unchanged and keep their order. No entry is renamed (the Display_Name never changes), renumbered, or removed.
+2. Every input name is normalised with `normaliseName`. A name that normalises to the empty string throws `InvalidContributorNameError` before anything is returned.
+3. Input names are grouped by Normalised_Name. A group whose key is already in the registry is ignored: it keeps its ID and its stored Display_Name, whatever variant spelling appears in the input. The remaining groups are the **new keys**.
+4. **Display_Name of a new key (deterministic "first-seen" within a batch).** A batch is one call, and an `Iterable` has no reliable order across callers, so "first occurrence in input order" would make the result depend on the order of the input. The design instead picks the variant that is smallest by UTF-16 code unit order (default `Array.prototype.sort` on strings, not `localeCompare`) among the distinct raw spellings of that key in the batch. The variants compared are the `name.trim()` values, and the winner is stored as written (case kept, only the surrounding whitespace removed). Across calls, "first-seen" has its literal meaning: the entry created by the earliest call that contained the key is never changed by later calls.
+5. New keys are sorted ascending by key, again in UTF-16 code unit order. Keys are distinct after grouping, so there are no ties. Let `n` be the highest numeric part among existing IDs (0 for an empty registry). The k-th new key (k from 1) gets `C{n+k}` and is appended with its Display_Name.
+6. Why this stays input-order independent: both the ID order and the Display_Name depend only on the set of distinct trimmed spellings in the batch (their keys, and the minimum spelling per key), never on their position or repeat count in the input. Permutations and duplicates of the input therefore give an equal registry (determinism, Req 11.10), and a second call with the returned registry and the same names finds every key present, so it returns an equal registry (idempotence).
+7. The Display_Name choice is a trade-off the trainer should know: if a person is spelled "alice" and "Alice" in the same first batch, the stored Display_Name is "Alice" (uppercase sorts before lowercase), not the one that happened to appear first in a file. Display names are never used in reports, so this has no effect on results.
+
+Consequence: on the first run of a fresh registry, `C1` goes to the new key that sorts first. After that, a new contributor always gets the next number, whatever their name sorts like, and spelling variants of a known person never create a new ID.
+
+**Load and save**
+
+```ts
+export class ContributorRegistryError extends Error { readonly file: string; readonly problem: string; }
+
+// Missing file -> EMPTY_REGISTRY (no write yet).
+// Unreadable, invalid JSON, wrong shape/version, bad ID format, duplicate ID, a name that is empty
+// after trimming, or two entries with the same Normalised_Name (e.g. "Alice" and " alice")
+// -> throws ContributorRegistryError naming the file and the problem. Never writes.
+export async function loadContributorRegistry(path: string): Promise<ContributorRegistry>;
+
+// Writes only when the registry has entries the file does not. Writes to a temp file in the same
+// folder and renames it over the target, so an interrupted write cannot leave a half-written file.
+export async function saveContributorRegistry(path: string, registry: ContributorRegistry): Promise<void>;
+
+// Orchestrates: load -> assign -> save (if changed) -> map samples to IDs and drop the names.
+export async function resolveContributors(
+  samples: LoadedSample[], path: string,
+): Promise<{ samples: ClassifierSample[]; registry: ContributorRegistry; addedIds: string[] }>;
+```
+
+Corrupt-file behavior (Requirement 3.10): `loadContributorRegistry` throws before any write is attempted, and `resolveContributors` calls load first, so a corrupt file is left byte-for-byte unchanged. A missing file is created by the first save, with `C1` for the first new name (Requirement 3.9). The registry is saved right after loading the dataset, before splitting. If training fails later, the new entries stay; that is intended, because IDs, once handed out, never change.
+
+`resolveContributors` maps each sample to its ID by looking up `normaliseName(sample.contributorName)` among the normalised registry names. Names stop at `resolveContributors`: it returns `ClassifierSample` objects that carry `contributorId` only. Reports, logs, split results, and the training config therefore cannot contain a name. Export file names are chosen by the collector's user and do appear in the load report and logs, so the README asks contributors not to put their name in an export file name.
+
+### 6a. Dataset report (`training/dataset/report.ts`)
+
+```ts
 export interface DatasetReport {
   totals: { samples: number; bursts: number; contributors: number };
   perLabel: Record<Label, { samples: number; bursts: number }>;
   perContributor: Record<string, Record<Label, number>>;   // keys are C1, C2...
   warnings: string[];                                       // low count, dominant contributor, missing test labels
-  split?: SplitSummary;                                     // seed, contributor ids per split, counts
+  split?: SplitSummary;                                     // seed, testContributorIds, contributor ids per split, counts
+  noneGuidance: string;                                     // fixed text, see below
   load: LoadReport;
 }
 export function buildDatasetReport(samples: ClassifierSample[], load: LoadReport, cfg: TrainingConfig['dataset'], split?: SplitResult): DatasetReport;
-export function formatDatasetReport(r: DatasetReport): string; // readable text
+export function formatDatasetReport(r: DatasetReport): string; // readable text, ends with the none guidance
+export const NONE_GUIDANCE: string;
 ```
 
-Names are never copied into the report. IDs are stable for a given set of names (sorted order), but adding a new contributor whose name sorts earlier renumbers later IDs; this is stated in the report header so IDs are not compared across different datasets.
+`NONE_GUIDANCE` is one constant, used by the JSON report, the readable summary (Requirements 3.11, 3.12), and quoted in the README so the three cannot drift:
+
+> Label guidance for `none`: include a pointing index finger and a relaxed open hand. Later specs use these poses to point and to puppeteer, so they must classify as `none`, not as a shadow shape.
+
+The report header states that IDs come from `data/contributors.json` and are stable across runs.
 
 ### 7. Leak-free splitting (`training/split.ts`)
 
 ```ts
 export interface SplitResult {
   train: string[]; validation: string[]; test: string[];       // sample ids
-  testContributors: string[]; validationContributors: string[]; trainContributors: string[]; // anonymised or raw names kept internal
-  seed: number;
+  testContributorIds: string[];                                // as configured, deduplicated, sorted
+  validationContributorIds: string[]; trainContributorIds: string[];  // IDs only, never names
+  seed: number;                                                // Split_Seed
   warnings: string[];
 }
 export function buildSplits(
-  samples: ReadonlyArray<Pick<ClassifierSample, 'id' | 'label' | 'contributor' | 'burstId'>>,
-  cfg: TrainingConfig['split'],
-  seed: number,
-): SplitResult;     // throws InsufficientContributorsError if < 2 contributors
+  samples: ReadonlyArray<Pick<ClassifierSample, 'id' | 'label' | 'contributorId' | 'burstId'>>,
+  cfg: TrainingConfig['split'],     // testContributorIds, seed, validationBurstFraction
+): SplitResult;
 ```
+
+Errors (all thrown before any training starts, each with a named class and a message that states the fix):
+
+| Condition | Error | Message content |
+|---|---|---|
+| `testContributorIds` is empty | `EmptyTestContributorsError` | at least one Contributor_ID is required (Req 4.3) |
+| Dataset has fewer than two distinct contributor IDs | `InsufficientContributorsError` | a leak-free Test_Split needs at least two Contributors (Req 4.11) |
+| Some configured ID is not in the Dataset | `MissingTestContributorsError` | the missing IDs and the IDs present in the Dataset (Req 4.4) |
+| Configured IDs cover every contributor in the Dataset | `NoTrainContributorsError` | the Train_Split would be empty (Req 4.5) |
+
+Checks run in the order shown, so a one-contributor dataset reports the insufficient-contributors problem rather than the covers-all problem. Configured IDs are deduplicated before the checks.
 
 Algorithm (deterministic, independent of input order):
 
-1. Sort contributors ascending, then shuffle with `mulberry32(seed)`. Take `max(1, round(testContributorFraction * n))` contributors as test, but always leave at least one contributor for train/validation. All their samples go to test.
-2. For the remaining samples, group by `(label, burstId)`. Sort bursts per label by `burstId`, shuffle with the same PRNG stream, and take `max(1, round(validationBurstFraction * count))` bursts per label as validation when the label has at least two bursts; labels with one burst keep it in train.
-3. Every other sample is train.
-4. A burst belongs to one contributor in practice. If a `burstId` appears under two contributors (corrupt data), the burst key includes the contributor so it still lands in one split per contributor, and the validator records a warning.
-5. Warn if a label has no test samples.
+1. **Test split.** Every sample whose `contributorId` is in `testContributorIds` goes to test. There is no sorting, shuffling, or fraction involved in choosing test contributors. The set of test samples is exactly the samples of the configured IDs.
+2. **Validation bursts.** From the remaining samples, group by `(label, contributorId, burstId)`; each group is one burst. For each label in Label order, sort that label's bursts by `(contributorId, burstId)` using plain string comparison. Create one `mulberry32(Split_Seed)` stream for the whole call and shuffle each label's sorted list in Label order. Let `count` be the label's burst count. If `count >= 2`, take `k = min(count - 1, max(1, round(validationBurstFraction * count)))` bursts as validation, so at least one burst always stays in train. A label with one non-test burst keeps it in train.
+3. **Train.** Every other sample is train.
+4. A burst belongs to one contributor in practice. If the same `burstId` appears under two contributors (corrupt data), the group key includes the contributor, so each contributor's part is assigned whole, and the validator records a warning.
+5. Warn (not error) if a label has no samples in test (Req 4.12).
 
-Sorting before shuffling makes the result a function of the set of samples and the seed, not of their order. No individual sample is ever assigned independently.
+The seed affects only step 2. Sorting before shuffling makes the result a function of the set of samples, the configured IDs, and the seed, not of the array order (Requirement 4.9). No individual sample is ever assigned independently (Requirement 4.8), and no burst or contributor crosses splits (Requirements 4.6, 4.7).
+
+`SplitSummary` for the report carries the Split_Seed, `testContributorIds`, the contributor IDs in each split, and sample and burst counts per label in each split (Requirement 4.10).
 
 ### 8. Augmentation (`training/augment.ts`)
 
@@ -374,7 +508,23 @@ export function buildCnn(cfg: TrainingConfig['cnn'], seed: number): tf.LayersMod
 // GlobalAveragePooling2D -> Dropout -> Dense(7, softmax)
 ```
 
-Each layer gets explicit `kernelInitializer`/`depthwiseInitializer`/`pointwiseInitializer` as `tf.initializers.glorotUniform({seed: seed + layerIndex})` and each dropout gets `seed`. Batch normalization (`tf.layers.batchNormalization`) is used in the CNN. The CNN has roughly 5k parameters (under 100 KB as float32).
+Batch normalization (`tf.layers.batchNormalization`) is used in the CNN. Its default initialisers are constants, so it needs no seed. The CNN has roughly 5k parameters (under 100 KB as float32).
+
+**Seeding (full).** A pure helper in `training/seeds.ts` derives every seed from the Training_Seed `S`:
+
+```ts
+export type SeedRole = 'kernel' | 'depthwise' | 'pointwise';   // no 'dropout': dropout is unseeded
+export function layerSeed(S: number, layerIndex: number, role: SeedRole): number;
+export function shuffleSeed(S: number): number;       // per-epoch shuffle PRNG (epoch number mixed in)
+export function augmentSeed(S: number): number;       // augmentation PRNG
+```
+
+- `layerIndex` is the layer's position in the model's creation order (0-based), so `layerSeed` is "seed + layerIndex" with a role offset so the depthwise and pointwise initialisers of one `separableConv2d` layer never share a seed with each other or with another layer.
+- Every `dense`, `conv2d` (`kernelInitializer`), `separableConv2d` (`depthwiseInitializer` and `pointwiseInitializer`) and any `depthwiseConv2d` layer gets `tf.initializers.glorotUniform({ seed })` with its own derived seed. Every `dropout` layer is created with no `seed` option. Bias initialisers stay at the TF.js default (zeros), which has no randomness.
+- `shuffleSeed`, `augmentSeed`, and the Split_Seed (`cfg.split.seed`) are separate streams with separate `mulberry32` instances, so changing augmentation settings never changes the shuffle or the validation bursts.
+- All derived seeds for one model are pairwise distinct. A unit test builds each model and checks this on the list returned by a `describeSeeds(model)` test helper.
+- **Reproducibility scope.** Two runs with the same Dataset, config, and Training_Backend produce the same Split, the same shuffle order, the same augmentation, and the same initial weights (Requirements 5.6, 5.11). **Dropout is the one source of run-to-run variation**: it is left unseeded by decision, so the final weights, the training curves, and the test accuracy of two same-seed runs may differ slightly. No test asserts equal final weights across runs, and the training test compares initial weights only. Reproducibility is guaranteed only within the same backend. `tfjs-node`, `wasm`, and `cpu` use different kernels, so their results may differ by floating-point effects, and the design makes no cross-backend claim (Requirements 5.8, 8.6).
+- **Decision (replaces an earlier open risk).** A fixed dropout `seed` might repeat the same mask on every step, which would turn dropout into a fixed pruning mask. Rather than test and work around that, dropout is left unseeded (Requirement 5.11). The cost is the weaker guarantee above; the README states it.
 
 **Training loop (`training/train.ts`).**
 
@@ -416,12 +566,45 @@ export function selectModel(a: EvaluationReport, b: EvaluationReport, tieMarginP
 ### 11. Export (`training/export.ts`)
 
 ```ts
+// Capture only: no disk. Backend-independent, so every backend yields the same artifacts shape.
+export async function captureArtifacts(model: tf.LayersModel): Promise<tf.io.ModelArtifacts>;
+
+// The custom writer: captureArtifacts + the on-disk layout below + metadata.json.
+export async function writeModelFiles(model: tf.LayersModel, meta: ModelMetadata, dir: string): Promise<{ files: string[]; bytes: number }>;
+
+// The loader used by the verification step, the evaluate command, and the required round-trip test.
+export async function loadExportedModel(dir: string): Promise<tf.LayersModel>;
+
 export async function exportModel(model: tf.LayersModel, meta: ModelMetadata, dir: string, cfg: TrainingConfig['export']): Promise<ExportResult>;
 ```
 
-Steps: `model.save(tf.io.withSaveHandler(async (artifacts) => { ...capture...; return { modelArtifactsInfo: {...} }; }))`, then write `model.json` and `weights.bin` ourselves, plus `metadata.json`. `model.json` contains `modelTopology`, `format`, `generatedBy`, `convertedBy`, and `weightsManifest: [{ paths: ['weights.bin'], weights: weightSpecs }]`, which is the layers-model layout that `tf.loadLayersModel(url)` reads. Because one writer is used for every backend, the layout is identical (Requirement 7.6). After writing: sum file sizes and fail above `maxBytes`; reload the written files through a small file `IOHandler` (`load()` returns the artifacts read from disk) with `tf.loadLayersModel`, predict on up to 32 test samples, and compare with the in-memory model within `reloadTolerance`.
+**What TF.js provides (verified from the API docs and tfjs-core source, see Research Findings).**
 
-`ExportResult` holds the file list, byte total, and reload max difference.
+- `captureArtifacts` calls `model.save(tf.io.withSaveHandler(async (artifacts) => { captured = artifacts; return { modelArtifactsInfo: { dateSaved: new Date(), modelTopologyType: 'JSON' } }; }))`. `withSaveHandler` gives an `IOHandler` with only `save`, so it works on `wasm` and `cpu`, where the `file://` handler does not exist. The captured `ModelArtifacts` hold `modelTopology`, `weightSpecs`, `weightData` (`ArrayBuffer` or `ArrayBuffer[]`), and optional `format`, `generatedBy`, `convertedBy`.
+- In-memory reload needs no hand-built `model.json`: `tf.loadLayersModel(tf.io.fromMemory(captured))`, using the single-argument `fromMemory` (the multi-argument form is deprecated). This path is used for the cheap check "do the artifacts describe the same model".
+
+**What must still be written by hand.** The browser's `tf.loadLayersModel('/models/classifier/model.json')` fetches `model.json` over HTTP and then fetches each file named in `weightsManifest` relative to it. TF.js offers no backend-independent file writer for that layout (the `file://` handler needs `tfjs-node`), and `fromMemory` produces no files. So `writeModelFiles` writes the minimum itself:
+
+- `model.json` = a `ModelJSON`: `modelTopology`, `format`, `generatedBy`, `convertedBy`, and `weightsManifest: [{ paths: ['weights.bin'], weights: captured.weightSpecs }]`. `trainingConfig` and `userDefinedMetadata` are left out.
+- `weights.bin` = the weight bytes, joined into one buffer with `tf.io.concatenateArrayBuffers` if `weightData` is an array. A single file keeps `paths` at one entry. The models are far below the 5 MB limit, so there is no sharding code.
+- `metadata.json` = `serializeModelMetadata(meta)`.
+
+No other keys, quantization, or extra files are added, so there is less hand-written layout to get wrong.
+
+**Verification, using the same loader as the browser.** `loadExportedModel(dir)` reads the three files back and calls `tf.loadLayersModel(url, { fetchFunc })` with a URL such as `http://localhost/models/classifier/model.json` and an injected `fetchFunc` that answers requests for `model.json` and `weights.bin` from `dir`. `loadLayersModel` accepts a URL string and a `fetchFunc` option (API docs), and for an HTTP URL it uses the same HTTP loader the browser uses, so this exercises the real `model.json` parsing and the real relative weight-path resolution. The `fetchFunc` approach has not been run here; task 1 confirms it first. **Fallback if it does not work in Node:** `loadExportedModel` parses `model.json` itself and builds an `IOHandler` with `tf.io.getWeightSpecs(modelJSON.weightsManifest)`, `tf.io.getModelArtifactsForJSONSync(modelJSON, weightSpecs, weightData)`, and `tf.io.fromMemory(artifacts)`. That still goes through TF.js's own manifest parsing, but it does not exercise the HTTP path-resolution step, and the design records which of the two ran.
+
+**`exportModel` steps.** Write the files, sum file sizes and fail above `maxBytes` (Requirement 7.3), reload with `loadExportedModel`, predict on up to 32 test samples, and compare with the in-memory model within `reloadTolerance` (Requirement 7.4). Because one writer is used for every backend, the layout is identical regardless of backend (Requirement 7.6).
+
+`ExportResult` holds the file list, byte total, reload max difference, and which loader path was used.
+
+**Required export round-trip test (Requirement 7.8, 7.9, 11.12).** An example test, not a property test: it has a fixed small model and a few fixed inputs, and more iterations would not find more bugs.
+
+1. Build a tiny seeded model (for example `dense(4, relu)` then `dense(7, softmax)` on a 6-value input) on the `cpu` backend in the vitest Node environment, so it runs in CI without `tfjs-node`.
+2. Call `writeModelFiles` into a temp directory.
+3. Load with `loadExportedModel(dir)`, which ends in `tf.loadLayersModel`, the loader the Predictor uses.
+4. Predict on 3 to 5 fixed inputs with both models and assert every probability differs by at most `cfg.export.reloadTolerance`.
+5. Also assert the written `model.json` has `modelTopology` and a `weightsManifest` whose `paths` all exist in the directory, and that a second, in-memory reload via `tf.io.fromMemory(captureArtifacts(...))` agrees.
+6. If the test fails, the suite fails, and the writer is not treated as verified (Requirement 7.9). `exportModel` also runs steps 3 and 4 on the real model on every export, so a broken layout cannot be shipped unnoticed.
 
 ### 12. Training API and CLI (`training/api.ts`, `training/cli/*.ts`)
 
@@ -429,7 +612,8 @@ Steps: `model.save(tf.io.withSaveHandler(async (artifacts) => { ...capture...; r
 export interface Logger { info(msg: string): void; warn(msg: string): void; error(msg: string): void; }
 
 export async function getDatasetStats(opts: LoadOptions & { config?: TrainingConfig }): Promise<DatasetReport>;
-export function makeSplits(samples, config, seed?): SplitResult;
+export function makeSplits(samples: ClassifierSample[], config?: TrainingConfig): SplitResult;   // reads config.split (testContributorIds, seed)
+export async function resolveDatasetContributors(loaded: LoadedSample[], config?: TrainingConfig): Promise<ClassifierSample[]>; // registry load/assign/save
 export async function trainCandidate(kind: 'MLP' | 'CNN', data: PreparedData, config, logger?): Promise<TrainedCandidate>;
 export async function evaluateCandidate(c: TrainedCandidate, data: PreparedData, config): Promise<EvaluationReport>;
 export function getConfusionMatrix(r: EvaluationReport): number[][];
@@ -453,6 +637,63 @@ npm scripts (dev dependency `tsx`, pinned, is used to run TypeScript with the re
 ```
 
 `training/out/` is gitignored (reports can contain sample ids but no names or landmarks).
+
+### 12a. Git ignore rules
+
+Current `.gitignore` (read before editing):
+
+```
+node_modules/
+dist/
+.DS_Store
+.env
+public/wasm/
+public/models/
+```
+
+The rule `public/models/` ignores the whole directory, and git cannot re-include a file whose parent directory is ignored, so a `!public/models/classifier/` line after it would have no effect. The directory rule must become a contents rule. Proposed file (changed and added lines marked):
+
+```
+node_modules/
+dist/
+.DS_Store
+.env
+public/wasm/
+public/models/*                      # changed: was public/models/
+!public/models/classifier/           # added
+data/raw/                            # added
+data/contributors.json               # added
+training/out/                        # added
+```
+
+(The comment markers are for this document only; the real file has no trailing comments, because a `#` after a pattern is part of the pattern in `.gitignore`.)
+
+`public/models/*` ignores everything inside `public/models/`, including `hand_landmarker.task`. The negation re-includes the `classifier/` directory, and its contents are then not ignored. `public/wasm/` is unchanged.
+
+I ran these exact rules in a throwaway git repository (not this one) with `git check-ignore -v`. Results:
+
+| Path | Result |
+|---|---|
+| `public/models/hand_landmarker.task` | ignored by `public/models/*` |
+| `public/wasm/vision_wasm_internal.js` | ignored by `public/wasm/` |
+| `public/models/classifier/model.json`, `weights.bin`, `metadata.json` | not ignored |
+| `data/raw/a.json`, `data/contributors.json`, `training/out/report.json` | ignored |
+| `public/models/classifier/model.json` under the old `public/models/` rule | ignored (the reason the rule must change) |
+
+Verification commands for the task list and the structure test (`git check-ignore` exits 0 and prints a line when a path is ignored, and exits 1 with no output when it is not; it works for paths that do not exist yet):
+
+```
+git check-ignore -v public/models/hand_landmarker.task        # expect: matched
+git check-ignore -v public/wasm/vision_wasm_internal.js       # expect: matched
+git check-ignore -v public/models/classifier/model.json       # expect: no output, exit 1
+git check-ignore -v public/models/classifier/weights.bin      # expect: no output, exit 1
+git check-ignore -v public/models/classifier/metadata.json    # expect: no output, exit 1
+git check-ignore -v data/raw/example.json                     # expect: matched
+git check-ignore -v data/contributors.json                    # expect: matched
+git check-ignore -v training/out/report.json                  # expect: matched
+```
+
+A Node-environment test runs these through `child_process.execFileSync('git', ['check-ignore', '-q', path])` and asserts the exit code for each (Requirements 2.14, 7.5, 7.7).
 
 ### 13. Runtime predictor (`src/classifier/predictor.ts`)
 
@@ -548,9 +789,23 @@ export interface ClassifierDebugView {
 export function createClassifierDebugView(canvas: HTMLCanvasElement): ClassifierDebugView;
 export function formatPrediction(p: Prediction): string;       // 'rabbit 0.93'
 export function takeLastEvents(events: ShapeEvent[], k: number): ShapeEvent[]; // pure, most recent first
+export function isToggleKey(e: Pick<KeyboardEvent, 'key' | 'repeat' | 'ctrlKey' | 'metaKey' | 'altKey'>, target: EventTarget | null): boolean; // pure: 'c'/'C', no repeat or modifiers, target not INPUT/TEXTAREA/contentEditable
 ```
 
 It mirrors `FpsOverlay`: starts hidden, toggles on `c`/`C` (ignoring key repeat, modifiers, and focus in `INPUT`/`TEXTAREA`/contentEditable), and draws text on the preview canvas with `config.fpsOverlayStyle.font` and `.color`. It is placed in `config.classifier.debugOverlay.corner` (default `tl`), which differs from the FPS corner (`tr`). It shows the top label and confidence, the last inference time in ms, and the last `eventLogSize` events; in the error state it shows the error message instead.
+
+**Requirement 12 coverage.**
+
+| Criterion | Design element |
+|---|---|
+| 12.1 hidden at start | `createClassifierDebugView` initial state `visible = false`; example test |
+| 12.2 C toggles | `isToggleKey` plus a `keydown` listener calling `toggle()`; example test |
+| 12.3 top label and confidence each frame | `update(p, state)` from `onPrediction`, rendered with `formatPrediction` in `draw()` |
+| 12.4 recent Shape_Events, length from Config | `logEvent` from `onShape`, `takeLastEvents(events, config.classifier.eventLogSize)`; Property 25 |
+| 12.5 FPS_Overlay font and color | reads `config.fpsOverlayStyle.font` and `.color`; example test |
+| 12.6 ignored in text inputs | `isToggleKey` returns false when the target is `INPUT`, `TEXTAREA`, or contentEditable; example test |
+| 12.7 error message | `update` receives `ClassifierState`; in `error` state `draw()` shows `message`; example test |
+| 12.8 different corner | `config.classifier.debugOverlay.corner` (`tl`) differs from the FPS corner (`tr`); config test |
 
 `src/main.ts` wiring: after `pipeline` creation, `startClassifier(pipeline)` runs without blocking `pipeline.start()`. The `onFrame` handler already draws the silhouette and FPS; `debugView.draw()` runs after `fps.update`. `onPrediction` feeds `debugView.update`, and `onShape` feeds `debugView.logEvent`.
 
@@ -588,15 +843,41 @@ Example `metadata.json`:
 }
 ```
 
+### Contributor registry (local, gitignored)
+
+`data/contributors.json` has the format shown in section 6: `{ "version": 1, "contributors": [{ "name", "id" }, ...] }`, append-only, IDs `C1`, `C2`, ..., `name` = the first-seen Display_Name, lookups by `normaliseName(name)` (case-insensitive, trimmed). It is the only file the Training_Pipeline writes names to.
+
 ### Reports
 
-`DatasetReport` and `EvaluationReport` (see components 6 and 10) are written to `training/out/` as JSON and printed as readable text. Contributors appear only as `C1`, `C2`. Per-sample entries use sample ids only.
+`DatasetReport` and `EvaluationReport` (see components 6a and 10) are written to `training/out/` as JSON and printed as readable text. Contributors appear only as `C1`, `C2`. Per-sample entries use sample ids only. The dataset report also carries the `none` guidance text.
+
+### README additions (Requirements 3.11, 8.12)
+
+- The `none` guidance text, word for word as `NONE_GUIDANCE`.
+- That `data/contributors.json` is local, must not be deleted or edited by hand (deleting it renumbers everyone on the next run), and should be backed up with the raw data.
+- That the test contributors are set by ID in `training/training-config.ts` (`split.testContributorIds`).
+- That running under Node 22 LTS should enable `tfjs-node` for faster training, and that this has not been verified on the author's machine. No `engines` field or `.nvmrc` is provided.
+- That names are matched ignoring case and surrounding whitespace, and that `data/contributors.json` keeps the first-seen spelling.
+- That reproducibility holds within one backend only, and that dropout is left unseeded: two runs with the same seed match in initial weights, but final weights may differ.
 
 ## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-Properties 1 to 8 are the properties required by Requirement 11. Properties 9 to 22 cover further pure logic (loading, reports, metrics, selection, backend choice, metadata, predictor, subscriptions, debug log). Property tests for 9 to 22 are marked optional in the task list.
+**Required (Requirement 11):** Properties 1 to 11 are the property tests required by Requirement 11 (criteria 11.2 to 11.11). The required export round-trip (criterion 11.12) is an example test, not a property, and is described under Components, section 11. **Optional:** Properties 12 to 25 cover further pure logic (split configuration errors, loading, reports, metrics, selection, backend choice, metadata, predictor, subscriptions, debug log), and their tests are marked optional in the task list.
+
+| Property | Title | Status | Requirement 11 criterion |
+|---|---|---|---|
+| 1 to 5 | Debouncer behavior | required | 11.2 to 11.6 |
+| 6 | Splits are leak-free | required | 11.7 |
+| 7 | Splits are deterministic and order-independent | required | (supports 4.9) |
+| 8 | Label encoding round trip | required | 11.8 |
+| 9 | Adding contributors never changes existing IDs | required | 11.9 |
+| 10 | Contributor ID assignment is idempotent and deterministic | required | 11.10 |
+| 11 | Test split is exactly the configured contributors | required | 11.11 |
+| 12 to 25 | Remaining pure logic | optional | none |
+
+Numbers 1 to 8 are unchanged from the previous revision. Former numbers 9 to 21 are now 13 to 25. The former number 13 is now 17 and is narrowed to name anonymity, because stable IDs are covered by the new 9 and 10.
 
 Frame-sequence generators for the debouncer produce arrays of `{label, confidence}` over the seven Labels with confidences in `[0, 1]`, biased to produce long runs, exact-threshold values, and `none` frames. `stableFrames` is generated in `[2, 30]`.
 
@@ -632,15 +913,15 @@ Frame-sequence generators for the debouncer produce arrays of `{label, confidenc
 
 ### Property 6: Splits are leak-free
 
-*For any* generated dataset with at least two contributors, `buildSplits` assigns every sample to exactly one of train, validation, or test; at least one whole contributor is in test; no contributor has samples in both train and test; and no burst has samples in more than one split. Every label with at least two non-test bursts has a validation sample.
+*For any* generated dataset with at least two contributors and any valid configured test contributor IDs, `buildSplits` assigns every sample to exactly one of train, validation, or test; at least one whole contributor is in test; no contributor has samples in both train and test; no burst has samples in more than one split; and train is non-empty. Every label with at least two non-test bursts has a validation sample and keeps at least one burst in train.
 
-**Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.9, 11.7**
+**Validates: Requirements 4.1, 4.6, 4.7, 4.8, 4.13, 11.7**
 
 ### Property 7: Splits are deterministic and order-independent
 
-*For any* generated dataset and seed, building splits twice, and building splits from a shuffled copy of the sample array, produce identical train, validation, and test id sets.
+*For any* generated dataset, valid configured test contributor IDs, and seed, building splits twice, and building splits from a shuffled copy of the sample array, produce identical train, validation, and test id sets. The seed influences only which bursts are validation: changing the seed never changes the test set.
 
-**Validates: Requirements 4.5**
+**Validates: Requirements 4.9**
 
 ### Property 8: Label encoding round trip
 
@@ -648,79 +929,103 @@ Frame-sequence generators for the debouncer produce arrays of `{label, confidenc
 
 **Validates: Requirements 11.8**
 
-### Property 9: Feature vector layout is fixed
+### Property 9: Adding contributors never changes existing IDs (required)
+
+*For any* valid contributor registry (generated by repeated calls to `assignContributorIds`, with IDs not necessarily contiguous) and *any* list of additional names with no empty-after-trim names, the registry returned by `assignContributorIds(names, registry)` contains every original entry unchanged (ID and Display_Name) and in the same position; new Normalised_Names receive IDs `C{n+1}`, `C{n+2}`, ... in ascending order of their normalised keys, where `n` is the highest existing number; spelling variants of an existing key (different case or surrounding whitespace) add no entry; and no ID and no Normalised_Name appears twice.
+
+**Validates: Requirements 3.3, 3.8, 3.13, 3.14, 11.9**
+
+### Property 10: Contributor ID assignment is idempotent, deterministic, and name-normalising (required)
+
+*For any* valid registry and *any* list of names (non-empty after trimming), assigning twice (the second time with the returned registry and the same names) returns an equal registry and adds no entries; assigning with any permutation of the names, or with duplicates added, returns an equal registry; names that differ only by case or by leading and trailing whitespace map to the same Contributor_ID; for every Contributor_ID the stored Display_Name equals the first-seen spelling, meaning the entry already stored if the key was known, otherwise the smallest trimmed spelling of that key in the batch that introduced it; later batches containing other variants leave the Display_Name unchanged; and assigning the names in two successive batches gives the same IDs for the first batch as assigning that batch alone.
+
+**Validates: Requirements 3.3, 3.8, 3.13, 3.14, 11.10**
+
+### Property 11: Test split is exactly the configured contributors (required)
+
+*For any* generated dataset and *any* non-empty list of test contributor IDs that are all present in the dataset and do not cover every contributor, the test split contains exactly the samples whose `contributorId` is in the list, no other sample, and every one of them; permuting the list or changing the seed does not change it.
+
+**Validates: Requirements 4.2, 4.6, 11.11**
+
+### Property 12: Invalid test contributor configurations are rejected (optional)
+
+*For any* generated dataset, an empty list throws `EmptyTestContributorsError`; a list containing any ID absent from the dataset throws `MissingTestContributorsError` whose message names every missing ID and lists the present IDs; a list covering every contributor throws `NoTrainContributorsError`; and a dataset with fewer than two contributors throws `InsufficientContributorsError`. No `SplitResult` is returned in any of these cases.
+
+**Validates: Requirements 4.3, 4.4, 4.5, 4.11**
+
+### Property 13: Feature vector layout is fixed
 
 *For any* frame with zero, one, or two hands, `buildFeatureVector(extractFeatures(frame))` has length 131, contains only finite numbers, equals the concatenation of slot 0 normalized values, slot 1 normalized values, the two Presence_Flags (1 or 0), and the inter-hand offset, and has all-zero values for an absent slot.
 
 **Validates: Requirements 5.1, 5.2**
 
-### Property 10: Validation partitions every sample and never throws
+### Property 14: Validation partitions every sample and never throws
 
 *For any* export document whose samples are randomly corrupted (unknown label, wrong landmark count, non-finite coordinate, bad base64 or wrong mask length, missing burst or contributor, duplicate id), `validateExportDocument` does not throw, and the number of accepted samples plus the number of skipped samples plus the number of duplicates equals the input sample count; every skipped entry has a non-empty reason; every accepted sample is valid.
 
 **Validates: Requirements 2.6, 2.7, 2.8, 2.12**
 
-### Property 11: Rebuilt features equal live features
+### Property 15: Rebuilt features equal live features
 
 *For any* generated frame, extracting features live, writing them into a Sample through the Spec 1 exporter, parsing the exported JSON, and rebuilding the Feature_Vector from the stored raw landmarks and frame size gives a vector equal (within epsilon) to the live Feature_Vector, and the stored mask decodes to the original mask bytes.
 
 **Validates: Requirements 2.9, 2.10, 8.10**
 
-### Property 12: Dataset report counts are consistent
+### Property 16: Dataset report counts are consistent
 
 *For any* generated dataset, the per-label sample counts sum to the total sample count, each per-contributor row sums to that contributor's sample count, per-label burst counts equal the number of distinct burst ids for that label, and low-count and dominant-contributor warnings appear exactly for the labels whose count is below the minimum or whose largest contributor share exceeds the maximum.
 
 **Validates: Requirements 3.1, 3.2, 3.5, 3.6**
 
-### Property 13: Contributor IDs are stable and anonymising
+### Property 17: Reports and logs contain no contributor names
 
-*For any* set of contributor names, `assignContributorIds` returns `C1..Cn` as a bijection, returns the same mapping for any ordering of the input, and the JSON of a dataset report built from samples with those names contains none of the names.
+*For any* set of contributor names (including names that are substrings of labels, ids, or each other's text, and names with unusual characters), the JSON and readable text of a dataset report built from samples resolved through `resolveContributors`, and the JSON of a split summary, contain none of the names, and `perContributor` keys match `^C[1-9][0-9]*$`. (Names that are very short or equal to JSON syntax, such as a single `"`, are excluded from the generator because a substring check cannot distinguish them from report text.)
 
-**Validates: Requirements 3.3, 3.4**
+**Validates: Requirements 3.4**
 
-### Property 14: Confusion matrix and metrics are consistent
+### Property 18: Confusion matrix and metrics are consistent
 
 *For any* list of predictions, the confusion matrix is 7x7 with entries summing to the number of predictions, row sums equal the true-label counts, accuracy equals trace divided by total, the misclassified list has length total minus trace with every entry's true label different from its predicted label, precision and recall are `null` exactly when their denominator is zero, the most-confused pairs are off-diagonal and sorted by descending count, and `JSON.parse(JSON.stringify(report))` equals the report.
 
 **Validates: Requirements 6.1, 6.2, 6.3, 6.7, 6.8, 8.9**
 
-### Property 15: Model selection follows the rule
+### Property 19: Model selection follows the rule
 
 *For any* two evaluation reports, the model with accuracy more than the tie margin higher is chosen; otherwise the one with fewer exported bytes is chosen, then lower inference time, then MLP.
 
 **Validates: Requirements 6.5, 6.6**
 
-### Property 16: Backend choice follows preference order
+### Property 20: Backend choice follows preference order
 
 *For any* availability of `tfjs-node`, `wasm`, and `cpu`, `chooseBackend` returns the first available backend in that order and records a reason for each skipped backend; when a backend is requested and unavailable, or none is available, it throws.
 
 **Validates: Requirements 8.2, 8.3, 8.4, 8.5**
 
-### Property 17: Model metadata round trip
+### Property 21: Model metadata round trip
 
 *For any* valid metadata object, `parseModelMetadata(JSON.parse(serializeModelMetadata(m)))` equals `m`; and for any metadata whose label list differs from the application's Label order, parsing fails with a mismatch error.
 
 **Validates: Requirements 7.2, 9.9**
 
-### Property 18: No hands means `none` without running the model
+### Property 22: No hands means `none` without running the model
 
 *For any* frame with no hands (any timestamp and frame size), the predictor returns top label `none`, and a spy on the model records zero predict calls.
 
 **Validates: Requirements 9.4**
 
-### Property 19: Predictions are distributions and leak no tensors
+### Property 23: Predictions are distributions and leak no tensors
 
 *For any* sequence of generated frames and a fixture model of each input type, every prediction has 7 non-negative probabilities summing to 1 within tolerance, its top label is the argmax, and the live tensor count after each frame equals the count before.
 
 **Validates: Requirements 9.3, 9.5**
 
-### Property 20: Subscriptions behave like a set
+### Property 24: Subscriptions behave like a set
 
 *For any* sequence of subscribe, unsubscribe, and emit operations, each emitted event is delivered exactly to the subscribers that are subscribed at that moment, an unsubscribed subscriber never receives later events, and a throwing subscriber does not stop delivery to the others.
 
 **Validates: Requirements 10.9, 10.10, 10.11**
 
-### Property 21: Debug event log keeps the most recent events
+### Property 25: Debug event log keeps the most recent events
 
 *For any* list of events and log size K, `takeLastEvents` returns the min(K, length) most recent events in most-recent-first order.
 
@@ -734,13 +1039,20 @@ Frame-sequence generators for the debouncer produce arrays of `{label, confidenc
 | Schema version, label list, or mask size mismatch | File rejected with found vs expected values (Req 2.2 to 2.4) |
 | Bad sample (label, landmarks, mask, ids) | Sample skipped with reason; run continues (Req 2.7) |
 | No valid samples | `NoValidSamplesError` with the load report; CLI exits non-zero (Req 2.13) |
-| Fewer than two contributors | `InsufficientContributorsError` before any training (Req 4.7) |
-| Label missing from test | Warning in the report (Req 4.8) |
+| `data/contributors.json` unparseable, wrong shape, or has duplicate IDs, duplicate Normalised_Names (for example "Alice" and " alice"), or a name that is empty after trimming | `ContributorRegistryError` naming the file and the problem; nothing is written, so the file stays unchanged (Req 3.10) |
+| `data/contributors.json` missing | Created on first save; first new key (sorted by Normalised_Name) gets `C1` (Req 3.9) |
+| Contributor name empty after trimming | Sample skipped by the loader as a missing name (Req 2.7); `assignContributorIds` throws `InvalidContributorNameError` if called with one |
+| `split.testContributorIds` empty | `EmptyTestContributorsError` (Req 4.3) |
+| Fewer than two contributors | `InsufficientContributorsError` before any training (Req 4.11) |
+| Configured test ID absent from the dataset | `MissingTestContributorsError` naming the missing IDs and listing the present IDs (Req 4.4) |
+| Configured test IDs cover every contributor | `NoTrainContributorsError`: the Train_Split would be empty (Req 4.5) |
+| Label missing from test | Warning in the report (Req 4.12) |
 | Accuracy target missed | Report says so and lists most-confused pairs; export still happens; no crash (Req 6.7) |
 | Zero-support label | Precision/recall `null` (`n/a`), never NaN (Req 6.8) |
 | `tfjs-node` missing, broken, or failing the smoke op | Fallback to `wasm`, then `cpu`, with the reason logged (Req 8.3, 8.4) |
 | Requested backend unavailable | `BackendUnavailableError` (Req 8.5) |
 | Export larger than 5 MB or reload mismatch | `ExportError`; files are removed or marked invalid so a bad model is not shipped (Req 7.3, 7.4) |
+| Export round-trip test fails | Test suite fails; the writer is not treated as verified (Req 7.9) |
 | Runtime model or metadata fails to load, or labels mismatch | Classifier state `error` with message; preview keeps running; debug view shows the message (Req 9.8, 9.9, 12.7) |
 | Predictor throws on one frame | Frame skipped, error recorded, next frame processed (Req 9.10) |
 | Subscriber throws | Caught per subscriber; others still receive the event (Req 10.11) |
@@ -753,24 +1065,34 @@ Property-based testing applies: the debouncer, splitter, label codec, feature ve
 ### Property-based tests
 
 - Library: **fast-check** (already a dev dependency, 4.10.2). No hand-rolled property testing.
-- Each property is one fast-check test with at least 100 runs (`{ numRuns: 100 }` or higher).
+- Each property is one fast-check test with at least 100 runs (`{ numRuns: 100 }` or higher). Properties 1 to 11 are required (Requirement 11); Properties 12 to 25 are optional.
 - Each test carries the tag comment `// Feature: classifier, Property {number}: {property_text}`, the same format as Spec 1.
-- Test files sit next to the code: `src/classifier/debouncer.test.ts` (Properties 1 to 5), `training/split.test.ts` (6, 7), `src/classifier/labels.test.ts` (8), `src/classifier/feature-vector.test.ts` (9), `training/dataset/validator.test.ts` (10, 11), `training/dataset/report.test.ts` (12, 13), `training/metrics.test.ts` and `training/select.test.ts` (14, 15), `training/backend.test.ts` (16), `src/classifier/metadata.test.ts` (17), `src/classifier/predictor.test.ts` (18, 19), `src/classifier/classifier.test.ts` (20), `src/classifier/debug-view.test.ts` (21).
-- Properties 19 uses a tiny fixture model built with TF.js on the CPU backend in the vitest Node environment. Property 18 uses a spy object for the model.
+- Test files sit next to the code: `src/classifier/debouncer.test.ts` (Properties 1 to 5), `training/split.test.ts` (6, 7, 11, 12), `src/classifier/labels.test.ts` (8), `training/dataset/contributors.test.ts` (9, 10), `src/classifier/feature-vector.test.ts` (13), `training/dataset/validator.test.ts` (14, 15), `training/dataset/report.test.ts` (16, 17), `training/metrics.test.ts` and `training/select.test.ts` (18, 19), `training/backend.test.ts` (20), `src/classifier/metadata.test.ts` (21), `src/classifier/predictor.test.ts` (22, 23), `src/classifier/classifier.test.ts` (24), `src/classifier/debug-view.test.ts` (25).
+- Property 23 uses a tiny fixture model built with TF.js on the CPU backend in the vitest Node environment. Property 22 uses a spy object for the model.
+- Properties 9 and 10 generate registries by folding `assignContributorIds` over generated name lists (names drawn from a small alphabet so collisions and out-of-order names are common). Property 11 generates datasets with several contributors and picks the test ID list as a random non-empty proper subset. For Properties 9 and 10 the name generator draws base names from a small alphabet (including a non-ASCII letter and a composed or decomposed accent), then applies random case changes and random leading or trailing whitespace, and filters out names that are empty after trimming, so spelling variants of one key collide often. The Property 10 oracle computes the expected Display_Name per key as the stored one if known, else the smallest trimmed spelling in the introducing batch.
 
 ### Unit and example tests
 
 - Relocation: Node-environment import test of the extractor and codec (Req 1.9); old paths do not exist (Req 1.6); full Spec 1 suite passes unchanged (Req 1.8).
-- Loader: temp directory with valid file, wrong-version file, garbage file, and a non-JSON file (Req 2.1 to 2.5); empty folder error (Req 2.13); `.gitignore` contains `data/raw/` (Req 2.14).
+- Loader: temp directory with valid file, wrong-version file, garbage file, and a non-JSON file (Req 2.1 to 2.5); empty folder error (Req 2.13).
 - Rebuild tolerance warning with tampered normalized landmarks (Req 2.11).
-- Split: one-contributor error (Req 4.7); missing-label-in-test warning (Req 4.8); spy test that augmentation runs on train only (Req 4.10).
+- `normaliseName` examples: `' Alice '`, `'alice'`, and `'ALICE'` share one key; composed and decomposed `é` share one key; `'José'` and `'Jose'` do not; empty and whitespace-only names are invalid (Req 3.13).
+- Contributor registry (temp directory): missing file is created with `C1` for the first new key in sorted order (Req 3.9); "Alice" then " alice " keeps one ID and the Display_Name "Alice" (Req 3.13, 3.14); corrupt JSON, duplicate ID, duplicate Normalised_Name, empty-after-trim name, and bad ID format each throw `ContributorRegistryError` and the file's bytes are identical before and after (Req 3.10); a second run with the same names writes nothing; a new name sorting before existing names gets the next number and no existing ID moves (Req 3.3, 3.8); an interrupted save leaves the previous file intact (temp-file-then-rename).
+- Split: concrete error examples for empty list, absent ID (message lists missing and present IDs), IDs covering all contributors, and one contributor (Req 4.3 to 4.5, 4.11); missing-label-in-test warning (Req 4.12); spy test that augmentation runs on train only (Req 4.14); worked example with `testContributorIds: ['C1']` and a fixed seed.
+- Report: the readable summary and JSON contain `NONE_GUIDANCE` (Req 3.11, 3.12).
+- README check (**optional**): the README contains the `NONE_GUIDANCE` text, the Node 22 sentence marked unverified, the registry and test-ID notes, and the dropout reproducibility note (Req 3.11, 8.12).
+- Seeding (**optional**): the list of derived seeds for each model (every kernel, depthwise, and pointwise seed plus shuffle, augmentation, and split seeds) has no duplicates (Req 5.7); two builds with the same seed have equal initial weights and builds with different seeds differ; dropout layers carry no seed (Req 5.11). Final weights are not compared.
+- Repo hygiene: `package.json` has no `engines` field and the repository has no `.nvmrc` (Req 8.13); the `git check-ignore` assertions from section 12a (Req 2.14, 7.5, 7.7), including that `/.kiro` and its subfolders are **not** ignored: `.kiro/specs/classifier/design.md`, `.kiro/steering/product.md`, and `.kiro/settings/mcp.json` each exit 1 with no output (Req 2.14).
+- Backend CLI: `train` prints a line naming the chosen backend before loading data, using a fake backend choice (Req 8.4, 8.11).
 - Models: MLP input shape `[131]`, CNN input `[96,96,1]`, CNN contains `separableConv2d`, output 7-way softmax (Req 5.1, 5.3).
-- Training: tiny synthetic dataset, a few epochs, CPU backend; two runs with the same seed give equal initial weights and equal final weights within tolerance (Req 5.6); `tf.memory().numTensors` unchanged apart from model weights (Req 5.8); `fit` receives only train and validation data (Req 5.7).
-- Export: tiny model saved with the custom writer, files present, size under limit, reload predictions match (Req 7.1 to 7.4); `git check-ignore` shows `public/models/classifier/` is tracked (Req 7.5).
-- Backend: a cpu-versus-wasm forward-pass comparison on a fixed tiny model within tolerance, skipped with a logged reason if wasm is unavailable (Req 8.6).
-- Config and scripts: `package.json` has `train`, `evaluate`, `dataset:report` (Req 8.7); `Config` defines `stableFrames`, `confidenceThreshold`, and distinct overlay corners (Req 10.1, 12.8).
+- Training: tiny synthetic dataset, a few epochs, CPU backend; two runs with the same seed and backend give equal initial weights and equal final weights within tolerance (Req 5.6); `tf.memory().numTensors` unchanged apart from model weights (Req 5.10); `fit` receives only train and validation data (Req 5.9). No test compares results across backends (Req 5.8, 8.6).
+- **Export round trip (required example test, Req 7.8, 7.9, 11.12):** tiny seeded model, `writeModelFiles` into a temp directory, `loadExportedModel` (ends in `tf.loadLayersModel`), fixed inputs, predictions within `reloadTolerance`; plus a check that `weightsManifest.paths` exist and that the in-memory `withSaveHandler` / `fromMemory` path agrees. It runs on the `cpu` backend so it needs no native module.
+- Export: file list, size under limit, `exportModel` reload check on a tiny model (Req 7.1 to 7.4, 7.6).
+- Backend: a cpu-versus-wasm forward-pass comparison on a fixed tiny model within tolerance, skipped with a logged reason if wasm is unavailable. This is a sanity check on the tolerance, not a reproducibility guarantee (Req 8.6).
+- Config and scripts: `package.json` has `train`, `evaluate`, `dataset:report` (Req 8.7); `training-config.ts` exports `split.testContributorIds` as a string array (Req 4.2); `Config` defines `stableFrames`, `confidenceThreshold`, and distinct overlay corners (Req 10.1, 12.8).
 - Facade: failing loader gives error state without throwing (Req 9.8); throwing predictor skips a frame (Req 9.10); `stop()` unsubscribes and disposes (Req 9.11).
-- Debug view: hidden by default, C toggles, ignores C in inputs, uses FPS font/color, shows error message (Req 12.1, 12.2, 12.5 to 12.7).
+- Debug view: hidden by default, C toggles (`isToggleKey` examples: `c`, `C`, repeat, modifiers, input target), ignores C in inputs, shows the top label and confidence after `update`, uses FPS font/color, shows error message, corner differs from the FPS corner (Req 12.1 to 12.3, 12.5 to 12.8).
+- `src/main.ts` wiring (example test with fakes): `startClassifier` is called without blocking `pipeline.start()`, `onPrediction` feeds `update`, `onShape` feeds `logEvent`, and `draw()` runs after the FPS overlay (Req 12.3, 12.4).
 
 ### Integration and manual checks
 

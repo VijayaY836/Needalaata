@@ -3,9 +3,9 @@ import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { config } from '../../src/config';
 import { createCaptureController } from './capture-controller';
-import { extractFeatures } from './feature-extractor';
+import { extractFeatures } from '../../src/vision/feature-extractor';
 import { parseExport, serializeExport } from './exporter';
-import { decodeMask, encodeMask } from './mask-generator';
+import { decodeMask, encodeMask } from '../../src/vision/mask-generator';
 import { createSampleStore } from './sample-store';
 import type { FrameResult, HandObservation, Landmark } from './types';
 
