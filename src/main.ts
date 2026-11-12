@@ -12,6 +12,7 @@ import { MediaPipeHandTracker, HAND_TRACKING_FAILED_MESSAGE } from './vision/han
 import { createVisionPipeline } from './vision/pipeline';
 import { createSilhouetteRenderer } from './vision/silhouette-renderer';
 import { createFpsOverlay } from './vision/fps-overlay';
+import { createPuppetFollow } from './spike/puppet-follow';
 
 async function bootstrap(): Promise<void> {
   const app = document.getElementById('app') ?? document.body;
@@ -77,12 +78,25 @@ async function bootstrap(): Promise<void> {
   const fps = createFpsOverlay(canvas);
   const pipeline = createVisionPipeline(video, tracker);
 
+  // Spike: puppet mode, toggled with the P key (off by default).
+  const puppet = createPuppetFollow(canvas);
+  let puppetMode = false;
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'p' || e.key === 'P') && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      puppetMode = !puppetMode;
+    }
+  });
+
   pipeline.onFrame((frame) => {
-    renderer.render(frame, {
-      color: config.warmSilhouetteColor,
-      background: config.backgroundColor,
-      blurRadius: config.silhouetteBlurRadius,
-    });
+    if (puppetMode) {
+      puppet.render(frame);
+    } else {
+      renderer.render(frame, {
+        color: config.warmSilhouetteColor,
+        background: config.backgroundColor,
+        blurRadius: config.silhouetteBlurRadius,
+      });
+    }
     fps.update(frame.timestamp);
   });
   pipeline.start();
