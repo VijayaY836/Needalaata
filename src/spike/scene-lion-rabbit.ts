@@ -7,6 +7,23 @@
 // down (keeping 16:9 of width, and the ground line at 72% of the screen) so nothing falls
 // off the edge. The canvas transform is set once per frame so layout follows the window.
 import type { FrameResult } from '../vision/types';
+import {
+  AudioEngine,
+  GROUND,
+  INDEX_TIP,
+  clamp,
+  createCaptionFader,
+  createStage,
+  drawCaption,
+  drawGlow as kitGlow,
+  drawHint,
+  drawRing as kitRing,
+  lerp,
+  loadArt,
+  rate,
+  smooth,
+  type Art,
+} from './stage-kit';
 
 // ---------------------------------------------------------------------------
 // Screenplay
@@ -69,19 +86,13 @@ export const BEATS: readonly Beat[] = [
 // Tuning (H units: 1 = canvas height)
 // ---------------------------------------------------------------------------
 
-const INDEX_TIP = 8;
 const FOLLOW_LERP = 0.15; // per 60 fps frame
 const LION_LERP = 0.045; // more lag than the rabbit
 const HOLD_SECONDS = 1;
 const HOLD_STEADY = 0.03;
 const APPEAR_SECONDS = 0.6;
-const CAPTION_FADE_IN = 0.35;
-const CAPTION_FADE_OUT = 0.3;
 
 const SPRITE_ASPECT = 1.5; // all PNGs are 1536x1024
-/** Narrowest world we lay out for; narrower screens scale the world down instead. */
-const MIN_ASPECT = 16 / 9;
-const GROUND = 0.72;
 const LION_H = 0.3;
 const RABBIT_H = 0.2;
 const WELL_H = 0.35;
@@ -104,166 +115,10 @@ const RIM_FRAC = 650 / 1024; // front rim of the well opening, as a fraction of 
 const ROOF_FRAC = 15 / 1024;
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Sound effects (Web Audio, no files): shared engine + lion-scene effects
 // ---------------------------------------------------------------------------
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const smooth = (t: number) => {
-  const c = clamp(t, 0, 1);
-  return c * c * (3 - 2 * c);
-};
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-/** Frame-rate independent version of a "per frame at 60 fps" lerp factor. */
-const rate = (perFrame: number, dt: number) => 1 - Math.pow(1 - perFrame, dt * 60);
-
-// ---------------------------------------------------------------------------
-// Art: white background -> transparency via flood fill from the image edges
-// ---------------------------------------------------------------------------
-
-const WHITE_TOLERANCE = 30;
-
-/**
- * Removes only the white that is connected to the outside (flood fill from the edges),
- * so the white perforation dots inside the puppet stay. `extraSeeds` (fractions of the
- * image size) cover white pockets that are enclosed by the art but are really background.
- */
-function makeCutout(img: HTMLImageElement, extraSeeds: [number, number][] = []): HTMLCanvasElement {
-  const w = img.naturalWidth;
-  const h = img.naturalHeight;
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  const g = c.getContext('2d', { willReadFrequently: true });
-  if (!g) return c;
-  g.drawImage(img, 0, 0);
-  const data = g.getImageData(0, 0, w, h);
-  const d = data.data;
-  const lo = 255 - WHITE_TOLERANCE;
-  const isWhite = (p: number) =>
-    (d[p * 4] ?? 0) >= lo && (d[p * 4 + 1] ?? 0) >= lo && (d[p * 4 + 2] ?? 0) >= lo;
-
-  const seen = new Uint8Array(w * h);
-  const stack = new Int32Array(w * h);
-  let sp = 0;
-  const push = (p: number) => {
-    if (seen[p] || !isWhite(p)) return;
-    seen[p] = 1;
-    stack[sp++] = p;
-  };
-  for (let x = 0; x < w; x++) {
-    push(x);
-    push((h - 1) * w + x);
-  }
-  for (let y = 0; y < h; y++) {
-    push(y * w);
-    push(y * w + w - 1);
-  }
-  for (const [fx, fy] of extraSeeds) {
-    push(Math.round(fy * (h - 1)) * w + Math.round(fx * (w - 1)));
-  }
-  while (sp > 0) {
-    const p = stack[--sp] ?? 0;
-    d[p * 4 + 3] = 0;
-    const x = p % w;
-    if (x > 0) push(p - 1);
-    if (x < w - 1) push(p + 1);
-    if (p >= w) push(p - w);
-    if (p < w * (h - 1)) push(p + w);
-  }
-  g.putImageData(data, 0, 0);
-  return c;
-}
-
-interface Art {
-  canvas: HTMLCanvasElement | null;
-}
-
-function loadArt(src: string, extraSeeds: [number, number][] = []): Art {
-  const art: Art = { canvas: null };
-  const img = new Image();
-  img.onload = () => {
-    art.canvas = makeCutout(img, extraSeeds);
-  };
-  img.src = src;
-  return art;
-}
-
-// ---------------------------------------------------------------------------
-// Sound effects (Web Audio, no files)
-// ---------------------------------------------------------------------------
-
-const MASTER_GAIN = 0.8;
-
-class Sfx {
-  private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
-  private noise: AudioBuffer | null = null;
-  private crackleIn = 0.3;
-  muted = false;
-
-  init(): void {
-    if (this.ctx) {
-      void this.ctx.resume();
-      return;
-    }
-    const Ctor: typeof AudioContext | undefined =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctor) return;
-    this.ctx = new Ctor();
-    this.master = this.ctx.createGain();
-    this.master.gain.value = this.muted ? 0 : MASTER_GAIN;
-    this.master.connect(this.ctx.destination);
-    const len = this.ctx.sampleRate * 2;
-    this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const ch = this.noise.getChannelData(0);
-    for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
-    void this.ctx.resume();
-  }
-
-  setMuted(m: boolean): void {
-    this.muted = m;
-    if (this.ctx && this.master) {
-      this.master.gain.setTargetAtTime(m ? 0 : MASTER_GAIN, this.ctx.currentTime, 0.03);
-    }
-  }
-
-  dispose(): void {
-    if (this.ctx) void this.ctx.close();
-    this.ctx = null;
-    this.master = null;
-    this.noise = null;
-  }
-
-  private noiseSrc(loop: boolean): AudioBufferSourceNode | null {
-    if (!this.ctx || !this.noise) return null;
-    const s = this.ctx.createBufferSource();
-    s.buffer = this.noise;
-    s.loop = loop;
-    return s;
-  }
-
-  /** Soft bell chime. 'awaken' is a short rising arpeggio. */
-  chime(kind: 'appear' | 'awaken'): void {
-    const { ctx, master } = this;
-    if (!ctx || !master) return;
-    const notes = kind === 'awaken' ? [523, 659, 784, 1047] : [784, 1175];
-    const t0 = ctx.currentTime;
-    notes.forEach((f, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      const st = t0 + i * 0.12;
-      g.gain.setValueAtTime(0.0001, st);
-      g.gain.exponentialRampToValueAtTime(0.13, st + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, st + 1.3);
-      o.connect(g).connect(master);
-      o.start(st);
-      o.stop(st + 1.4);
-    });
-  }
-
+class Sfx extends AudioEngine {
   /** Low rumbling roar: filtered noise + low oscillator with a tremolo. */
   roar(): void {
     const { ctx, master } = this;
@@ -359,27 +214,6 @@ class Sfx {
     o.start(t0);
     o.stop(t0 + 0.45);
   }
-
-  /** Very quiet lamp crackle: sparse tiny filtered noise ticks, scheduled from the frame loop. */
-  crackle(dt: number): void {
-    const { ctx, master } = this;
-    if (!ctx || !master || this.muted) return;
-    this.crackleIn -= dt;
-    if (this.crackleIn > 0) return;
-    this.crackleIn = 0.05 + Math.random() * Math.random() * 0.7;
-    const n = this.noiseSrc(false);
-    if (!n) return;
-    const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 1500 + Math.random() * 2500;
-    const g = ctx.createGain();
-    const t0 = ctx.currentTime;
-    const len = 0.006 + Math.random() * 0.02;
-    g.gain.setValueAtTime(0.004 + Math.random() * 0.012, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
-    n.connect(hp).connect(g).connect(master);
-    n.start(t0, Math.random() * 1.5, len + 0.01);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -438,42 +272,31 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
   const rabbitArt = loadArt('/art/rabbit.png');
   const lionArt = loadArt('/art/lion.png');
   // The well has white pockets enclosed by the pillars/crossbar that are really background.
-  const wellArt = loadArt('/art/well.png', [
-    [520 / 1536, 225 / 1024],
-    [1020 / 1536, 225 / 1024],
-    [600 / 1536, 450 / 1024],
-    [1000 / 1536, 450 / 1024],
-  ]);
+  const wellArt = loadArt('/art/well.png', {
+    extraSeeds: [
+      [520 / 1536, 225 / 1024],
+      [1020 / 1536, 225 / 1024],
+      [600 / 1536, 450 / 1024],
+      [1000 / 1536, 450 / 1024],
+    ],
+  });
   const sfx = new Sfx();
 
-  let active = false;
-  let aspect = MIN_ASPECT; // world width in world units
-  let worldScale = 1; // screen px per world unit = H * worldScale
-  const worldOffsetY = () => GROUND * (1 - worldScale); // keeps the ground at 72% of the screen
-  /** Fingertip (mirrored, normalized screen) -> world units. */
-  const tipToWorld = (tip: { x: number; y: number }) => ({
-    x: tip.x * aspect,
-    y: (tip.y - worldOffsetY()) / worldScale,
+  // Anchors are fractions of the width, so keep actors on them when the world width changes.
+  const stage = createStage(canvas, (k) => {
+    rabbit.x *= k;
+    lion.x *= k;
+    leapStart.x *= k;
   });
-
-  // saved page state for exit()
-  let saved: {
-    canvasCss: string;
-    w: number;
-    h: number;
-    html: string;
-    body: string;
-    app: string;
-    notice: string;
-  } | null = null;
+  const tipToWorld = (tip: { x: number; y: number }) => stage.tipToWorld(tip);
 
   // ---- layout (H units) ----
   // Well at ~78% of the width, but always leaving room for the lion on its right.
   const wellX = () =>
-    Math.min(0.78 * aspect, aspect - LION_RIGHT_OFFSET - LION_HALF - 0.03);
+    Math.min(0.78 * stage.aspect, stage.aspect - LION_RIGHT_OFFSET - LION_HALF - 0.03);
   const lionRightX = () => wellX() + LION_RIGHT_OFFSET;
-  const lionX0 = () => 0.22 * aspect;
-  const rabbitX0 = () => 0.4 * aspect;
+  const lionX0 = () => 0.22 * stage.aspect;
+  const rabbitX0 = () => 0.4 * stage.aspect;
   const stopX = () => wellX() - WELL_HALF - RABBIT_HALF - 0.04; // beside (left of) the well
   const lionGroundY = () => centreOnGround(LION_H, LION_FOOT);
   const rabbitGroundY = () => centreOnGround(RABBIT_H, RABBIT_FOOT);
@@ -504,8 +327,7 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
   let reflection = 0;
   let roarShake = 0;
 
-  let shownCaption = BEATS[0]?.caption ?? '';
-  let capAlpha = 0;
+  const captions = createCaptionFader(BEATS[0]?.caption ?? '');
 
   let warmth = 0;
   let endTime = 0;
@@ -528,8 +350,7 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     lionHidden = false;
     reflection = 0;
     roarShake = 0;
-    shownCaption = BEATS[0]?.caption ?? '';
-    capAlpha = 0;
+    captions.reset(BEATS[0]?.caption ?? '');
     warmth = 0;
     endTime = 0;
     lastNow = performance.now();
@@ -547,73 +368,17 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
 
   // ---- page takeover ----
 
-  function sizeCanvas(): void {
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.round(window.innerWidth * dpr));
-    const h = Math.max(1, Math.round(window.innerHeight * dpr));
-    const screenAspect = w / h;
-    const newAspect = Math.max(screenAspect, MIN_ASPECT);
-    worldScale = screenAspect / newAspect;
-    if (canvas.width !== w) canvas.width = w;
-    if (canvas.height !== h) canvas.height = h;
-    if (Math.abs(newAspect - aspect) > 1e-6) {
-      // Anchors are fractions of the width, so keep actors on their anchors.
-      const k = newAspect / aspect;
-      rabbit.x *= k;
-      lion.x *= k;
-      leapStart.x *= k;
-      aspect = newAspect;
-    }
-  }
-
-  const onResize = () => sizeCanvas();
-
   function enter(): void {
-    if (active) return;
-    active = true;
-    const html = document.documentElement;
-    const body = document.body;
-    const app = document.getElementById('app');
-    const notice = document.querySelector<HTMLElement>('.on-device-notice');
-    saved = {
-      canvasCss: canvas.style.cssText,
-      w: canvas.width,
-      h: canvas.height,
-      html: html.style.cssText,
-      body: body.style.cssText,
-      app: app?.style.cssText ?? '',
-      notice: notice?.style.display ?? '',
-    };
-    html.style.cssText += ';height:100%;margin:0;padding:0;overflow:hidden;';
-    body.style.cssText += ';height:100%;margin:0;padding:0;overflow:hidden;';
-    if (app) app.style.cssText += ';padding:0;margin:0;display:block;height:100%;overflow:hidden;';
-    if (notice) notice.style.display = 'none';
-    canvas.style.cssText =
-      'position:fixed;left:0;top:0;width:100vw;height:100vh;max-width:none;display:block;';
-    sizeCanvas();
-    window.addEventListener('resize', onResize);
-
+    if (stage.active) return;
+    stage.enter();
     sfx.init(); // inside the key-press gesture
     resetState();
   }
 
   function exit(): void {
-    if (!active) return;
-    active = false;
-    window.removeEventListener('resize', onResize);
+    if (!stage.active) return;
+    stage.exit();
     sfx.dispose();
-    if (saved) {
-      document.documentElement.style.cssText = saved.html;
-      document.body.style.cssText = saved.body;
-      const app = document.getElementById('app');
-      if (app) app.style.cssText = saved.app;
-      const notice = document.querySelector<HTMLElement>('.on-device-notice');
-      if (notice) notice.style.display = saved.notice;
-      canvas.style.cssText = saved.canvasCss;
-      canvas.width = saved.w;
-      canvas.height = saved.h;
-      saved = null;
-    }
   }
 
   function toggleMute(): void {
@@ -658,18 +423,10 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     ctx.fillRect(0, 0, w, h);
   }
 
-  /** Soft warm glow in H units. */
+  /** Soft warm glow in world units. */
   function drawGlow(x: number, y: number, radius: number, alpha: number): void {
-    if (!ctx || alpha <= 0.001) return;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
-    g.addColorStop(0, `rgba(255,226,150,${alpha})`);
-    g.addColorStop(1, 'rgba(255,226,150,0)');
-    ctx.save();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = g;
-    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    ctx.restore();
+    if (!ctx) return;
+    kitGlow(ctx, x, y, radius, alpha);
   }
 
   function drawPuppet(art: Art, a: Actor, heightU: number, bobAmp: number, t: number): void {
@@ -708,73 +465,8 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     ctx.restore();
   }
 
-  /** Caption in a bottom band: max 80% width, at most 2 lines, clamp(18px, 2.6vw, 34px). */
-  function drawCaption(text: string, alpha: number): void {
-    if (!ctx || alpha <= 0.001 || !text) return;
-    const dpr = window.devicePixelRatio || 1;
-    const W = canvas.width;
-    const H = canvas.height;
-    let size = clamp(0.026 * window.innerWidth, 18, 34) * dpr;
-    const maxW = W * 0.8;
-
-    const wrap = (): string[] => {
-      const lines: string[] = [];
-      let line = '';
-      for (const word of text.split(' ')) {
-        const trial = line ? `${line} ${word}` : word;
-        if (line && ctx.measureText(trial).width > maxW) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = trial;
-        }
-      }
-      if (line) lines.push(line);
-      return lines;
-    };
-
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = alpha;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    let lines: string[] = [];
-    for (let i = 0; i < 8; i++) {
-      ctx.font = `italic ${size}px Georgia, 'Times New Roman', serif`;
-      lines = wrap();
-      if (lines.length <= 2) break;
-      size *= 0.92; // never more than two lines
-    }
-    ctx.fillStyle = '#f6e7c8';
-    ctx.shadowColor = 'rgba(25,10,0,0.85)';
-    ctx.shadowBlur = size * 0.35;
-    ctx.shadowOffsetY = size * 0.06;
-    const lineH = size * 1.3;
-    const bandCentre = H * (GROUND + 1) * 0.5 + H * 0.01; // band between ground line and bottom
-    const top = bandCentre - ((lines.length - 1) * lineH) / 2;
-    lines.forEach((l, i) => ctx.fillText(l, W / 2, top + i * lineH));
-    ctx.restore();
-  }
-
   function drawRing(x: number, y: number, progress: number): void {
-    if (!ctx) return;
-    const r = 0.045;
-    ctx.save();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.lineCap = 'round';
-    ctx.lineWidth = 0.008;
-    ctx.shadowColor = 'rgba(25,10,0,0.6)';
-    ctx.shadowBlur = 6;
-    ctx.strokeStyle = 'rgba(246,231,200,0.3)';
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,244,214,0.95)';
-    ctx.beginPath();
-    ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(progress, 0, 1));
-    ctx.stroke();
-    ctx.restore();
+    if (ctx) kitRing(ctx, x, y, progress);
   }
 
   // ---- motion ----
@@ -964,8 +656,8 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
   // ---- frame ----
 
   function render(frame: FrameResult): void {
-    if (!ctx || !active) return;
-    sizeCanvas(); // cheap; keeps us exact even if a resize event was missed
+    if (!ctx || !stage.active) return;
+    stage.fit(); // cheap; keeps us exact even if a resize event was missed
     const W = canvas.width;
     const H = canvas.height;
     const now = performance.now();
@@ -1060,23 +752,14 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     }
 
     // ---- captions ----
-    const currentCaption = BEATS[beatIndex]?.caption ?? '';
-    if (shownCaption !== currentCaption) {
-      capAlpha -= dt / CAPTION_FADE_OUT;
-      if (capAlpha <= 0) {
-        capAlpha = 0;
-        shownCaption = currentCaption;
-      }
-    } else {
-      capAlpha = Math.min(1, capAlpha + dt / CAPTION_FADE_IN);
-    }
+    const caption = captions.update(BEATS[beatIndex]?.caption ?? '', dt);
 
     // ---- draw ----
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     drawScreen(W, H, t);
 
     // From here on, world units (see top of file).
-    ctx.setTransform(H * worldScale, 0, 0, H * worldScale, 0, H * worldOffsetY());
+    stage.applyWorldTransform(ctx);
 
     const leading = beat?.type === 'lead' ? 1 : 0.35;
     drawGlow(wellX(), wellY(), 0.4, (0.22 + 0.06 * Math.sin(t * 1.7)) * leading + 0.08);
@@ -1088,7 +771,7 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
       // Behind the well, clipped at the rim so it vanishes into the opening.
       ctx.save();
       ctx.beginPath();
-      ctx.rect(-1, -1, aspect + 2, rimY() + 1);
+      ctx.rect(-1, -1, stage.aspect + 2, rimY() + 1);
       ctx.clip();
       drawPuppet(lionArt, lion, LION_H, lionBob, t);
       ctx.restore();
@@ -1101,22 +784,11 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     if (ringTip) drawRing(ringTip.x, ringTip.y, ringTip.progress);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawCaption(shownCaption, capAlpha);
+    drawCaption(ctx, canvas, caption.text, caption.alpha);
 
     // "Press R to play again" once the story is told and the glow has settled.
     if (BEATS[beatIndex]?.last && endTime > 1) {
-      const size = clamp(0.02 * window.innerWidth, 14, 24) * (window.devicePixelRatio || 1);
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = clamp((endTime - 1) / 0.6, 0, 1) * 0.9;
-      ctx.font = `${size}px Georgia, 'Times New Roman', serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#f6e7c8';
-      ctx.shadowColor = 'rgba(25,10,0,0.85)';
-      ctx.shadowBlur = 8;
-      ctx.fillText('Press R to play again', W / 2, H * 0.08);
-      ctx.restore();
+      drawHint(ctx, canvas, 'Press R to play again', clamp((endTime - 1) / 0.6, 0, 1) * 0.9);
     }
   }
 
@@ -1124,11 +796,11 @@ export function createLionRabbitScene(canvas: HTMLCanvasElement): LionRabbitScen
     enter,
     exit,
     get active() {
-      return active;
+      return stage.active;
     },
     render,
     restart() {
-      if (active) resetState();
+      if (stage.active) resetState();
     },
     toggleMute,
   };

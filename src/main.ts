@@ -14,6 +14,7 @@ import { createSilhouetteRenderer } from './vision/silhouette-renderer';
 import { createFpsOverlay } from './vision/fps-overlay';
 import { createPuppetFollow } from './spike/puppet-follow';
 import { createLionRabbitScene } from './spike/scene-lion-rabbit';
+import { createPunchkinScene } from './spike/scene-punchkin';
 
 async function bootstrap(): Promise<void> {
   const app = document.getElementById('app') ?? document.body;
@@ -85,24 +86,35 @@ async function bootstrap(): Promise<void> {
   // Spike: "The Clever Rabbit and the Lion" scene (S toggles, R restarts, M mutes).
   // enter() runs inside the key press so Web Audio is allowed to start.
   const scene = createLionRabbitScene(canvas);
+  // Spike: "Punchkin: The Soul in the Parrot" scene (K toggles, R restarts, M mutes).
+  const punchkin = createPunchkinScene(canvas);
+  const scenes = { s: scene, k: punchkin } as const;
   window.addEventListener('keydown', (e) => {
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
     const key = e.key.toLowerCase();
+    const current = scene.active ? scene : punchkin.active ? punchkin : null;
     if (key === 'p') {
       puppetMode = !puppetMode;
-    } else if (key === 's') {
-      if (scene.active) scene.exit();
-      else scene.enter();
+    } else if (key === 's' || key === 'k') {
+      const target = scenes[key];
+      if (current === target) {
+        target.exit();
+      } else {
+        current?.exit(); // only one scene at a time
+        target.enter();
+      }
     } else if (key === 'r') {
-      scene.restart();
+      current?.restart();
     } else if (key === 'm') {
-      scene.toggleMute();
+      current?.toggleMute();
     }
   });
 
   pipeline.onFrame((frame) => {
     if (scene.active) {
       scene.render(frame);
+    } else if (punchkin.active) {
+      punchkin.render(frame);
     } else if (puppetMode) {
       puppet.render(frame);
     } else {
