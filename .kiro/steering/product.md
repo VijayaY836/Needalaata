@@ -40,7 +40,7 @@ Halloween tone comes from the setting and from the two spooky tales (Punchkin, K
 | Label | Hand shadow (validate during data collection) |
 |---|---|
 | `rabbit` | One hand, index + middle fingers raised as ears |
-| `lion` | Dog-head shape (thumb up as ear, pinky lowered as jaw) with the other hand's spread fingers behind as a mane |
+| `lion` | Roaring lion: one hand turned sideways and opened into a big C like a lion's wide roaring mouth; four fingers pressed together on top (slightly curved), thumb stretched down below, wide open gap between them, pointing sideways |
 | `bird` | Two hands crossed and linked at the thumbs, fingers spread as wings |
 | `snake` | Forearm raised, hand arched forward with fingers together like a cobra's hood |
 | `crocodile` | Two hands stacked palm-to-palm, opening and closing like jaws |

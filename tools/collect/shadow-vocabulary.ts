@@ -29,13 +29,15 @@ export const SHADOW_VOCABULARY: Record<Label, ShadowEntry> = {
   lion: {
     label: 'lion',
     description:
-      'Dog-head shape (thumb up as ear, pinky lowered as jaw) with the other hand\u2019s spread fingers behind as a mane.',
+      'Roaring lion: turn one hand sideways and open it into a big C, like a lion\u2019s mouth roaring wide. Fingers together on top, thumb stretched below.',
+    // Side view, mouth opening to the right: palm/wrist on the left, the four fingers
+    // pressed together as one slightly curved upper jaw, the thumb as the lower jaw,
+    // and a wide open gap between them.
     illustrationSvg: wrap(
-      '<g stroke-width="8">' +
-        [-60, -30, 0, 30, 60]
-          .map((a) => `<line x1="60" y1="64" x2="${60 + 48 * Math.sin((a * Math.PI) / 180)}" y2="${64 - 48 * Math.cos((a * Math.PI) / 180)}"/>`)
-          .join('') +
-        '</g><ellipse cx="60" cy="70" rx="26" ry="22" stroke="none"/>',
+      '<rect x="8" y="52" width="26" height="22" rx="8" stroke="none"/>' +
+        '<ellipse cx="40" cy="62" rx="16" ry="24" stroke="none"/>' +
+        '<path d="M44 46 Q76 22 108 38" stroke-width="18" fill="none"/>' +
+        '<path d="M46 80 Q74 98 100 88" stroke-width="10" fill="none"/>',
     ),
   },
   bird: {
