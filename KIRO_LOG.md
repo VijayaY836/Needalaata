@@ -164,3 +164,21 @@
 - Predictions match the in-memory model (5 decimals); `weights.bin` is requested under `/models/classifier/`, so the HTTP path-resolution step is exercised
 - Task 8.5 fallback (`tf.io.fromMemory`) is not needed
 - Test: `training/export.fetch-loader.test.ts`; passes, and `npm run typecheck` is clean
+
+## Nov 13 – Spike: Punchkin scene
+
+### "Punchkin: The Soul in the Parrot" (K key, branch spike/puppet-follow)
+- Second playable scene: Punchkin and Balna appear → the caged parrot glows → hold steady to wake the prince →
+  point to lead him to the cage (Punchkin trembles harder as he gets closer) → the cage opens and the parrot flies
+  free → Punchkin crumbles into particles → Balna is free
+- Moonlit indigo stage with a warm lamp glow and drifting dust, so it feels distinct from the amber lion scene
+- Fixed the "everything looks the same colour" problem: each character now has its own colour identity
+  (Balna rose/maroon, prince teal/saffron, Punchkin indigo/red, parrot green)
+- Shared stage kit (cutouts, audio, captions, fingertip mapping, 16:9 scaling) extracted so both scenes reuse it
+- Better cutouts: also remove large enclosed white regions (between cage bars) while keeping small dots and pearls
+- Web Audio: eerie drone, cage creak, wing flutters, crumbling hiss, warm closing chord
+- Cultural check: the sorcerer's design will be revised so his menace reads as magical, not ethnic (cultural-guidelines.md)
+
+### Next
+- Polish the Punchkin scene
+- Record my own data (14 bursts), then Spec 2 groups 2–3
