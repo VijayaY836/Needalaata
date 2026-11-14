@@ -25,6 +25,16 @@ export interface Config {
   maskPaddingScale: number;
   wasmPath: string;
   modelAssetPath: string;
+  classifier: {
+    modelPath: string;
+    metadataPath: string;
+    /** Consecutive identical stable frames required before a Shape_Event fires. */
+    stableFrames: number;
+    confidenceThreshold: number;
+    inferenceBudgetMs: number;
+    eventLogSize: number;
+    debugOverlay: { corner: 'tl' | 'tr' | 'bl' | 'br' };
+  };
 }
 
 export const config: Config = {
@@ -44,6 +54,15 @@ export const config: Config = {
   maskPaddingScale: 0.6,
   wasmPath: '/wasm',
   modelAssetPath: '/models/hand_landmarker.task',
+  classifier: {
+    modelPath: '/models/classifier/model.json',
+    metadataPath: '/models/classifier/metadata.json',
+    stableFrames: 24,
+    confidenceThreshold: 0.85,
+    inferenceBudgetMs: 15,
+    eventLogSize: 5,
+    debugOverlay: { corner: 'tl' },
+  },
 };
 
 export default config;

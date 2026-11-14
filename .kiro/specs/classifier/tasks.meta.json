@@ -11,6 +11,26 @@
     "2.6 Write property test for metadata round trip": {
       "status": "passed",
       "lastRunTimestamp": 1794679438135
+    },
+    "3.3 Write property test for minimum run length": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679889710
+    },
+    "3.4 Write property test for rapid alternation": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679926557
+    },
+    "3.5 Write property test for run reset": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679928038
+    },
+    "3.6 Write property test for single fire per run": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679931826
+    },
+    "3.7 Write property test for event content": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679935839
     }
   },
   "executionHistory": {
@@ -190,6 +210,107 @@
         "executionId": "0ce2740a-e769-4558-9705-c0a1af39b318",
         "chatSessionId": "sess_5060cf2a-1b6e-45db-b54f-c4f84aca2961",
         "timestamp": 1794679446535
+      }
+    ],
+    "3.1 Add classifier section to `src/config.ts`": [
+      {
+        "executionId": "333ff0a9-5560-4af3-b35c-b693afc4e72c",
+        "chatSessionId": "sess_5a7f3fcd-fd63-4d5a-8f0b-2e4f2f073191",
+        "timestamp": 1794679621773
+      },
+      {
+        "executionId": "333ff0a9-5560-4af3-b35c-b693afc4e72c",
+        "chatSessionId": "sess_5a7f3fcd-fd63-4d5a-8f0b-2e4f2f073191",
+        "timestamp": 1794679687221
+      }
+    ],
+    "3.2 Implement `debouncer.ts`": [
+      {
+        "executionId": "db31a398-e253-4a64-baae-c3d2fe0c0d13",
+        "chatSessionId": "sess_2885440a-9c7e-49c0-b09c-2b7512c2bb8c",
+        "timestamp": 1794679702936
+      },
+      {
+        "executionId": "db31a398-e253-4a64-baae-c3d2fe0c0d13",
+        "chatSessionId": "sess_2885440a-9c7e-49c0-b09c-2b7512c2bb8c",
+        "timestamp": 1794679769581
+      }
+    ],
+    "3.3 Write property test for minimum run length": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679799137
+      },
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679899053
+      }
+    ],
+    "3.4 Write property test for rapid alternation": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679899900
+      },
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679943000
+      },
+      {
+        "executionId": "69f17ea1-cced-44f3-ab95-8ae7db5eea8c",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794680025417
+      },
+      {
+        "executionId": "69f17ea1-cced-44f3-ab95-8ae7db5eea8c",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794680055805
+      }
+    ],
+    "3.5 Write property test for run reset": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679900719
+      },
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679943686
+      }
+    ],
+    "3.6 Write property test for single fire per run": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679901438
+      },
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679944487
+      }
+    ],
+    "3.7 Write property test for event content": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679902253
+      },
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679945216
+      }
+    ],
+    "3. Debounced shape events": [
+      {
+        "executionId": "c6522b3d-97fc-4f7a-a6fe-a52c739ba188",
+        "chatSessionId": "sess_21f9db00-c14c-418a-8ea4-d0aff1cbd4ce",
+        "timestamp": 1794679945268
       }
     ]
   }

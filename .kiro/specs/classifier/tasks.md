@@ -95,36 +95,36 @@ Use the TensorFlow.js docs (Context7 `/websites/js_tensorflow_api`) before using
     - **Property 21: Model metadata round trip**
     - **Validates: Requirements 7.2, 9.9**
 
-- [ ] 3. Debounced shape events
-  - [ ] 3.1 Add classifier section to `src/config.ts`
+- [x] 3. Debounced shape events
+  - [x] 3.1 Add classifier section to `src/config.ts`
     - Extend `Config` with `classifier: { modelPath, metadataPath, stableFrames: 24, confidenceThreshold: 0.85, inferenceBudgetMs: 15, eventLogSize: 5, debugOverlay: { corner: 'tl' } }`; leave existing keys unchanged
     - _Requirements: 9.7, 10.1, 12.4, 12.8_
 
-  - [ ] 3.2 Implement `debouncer.ts`
+  - [x] 3.2 Implement `debouncer.ts`
     - `createDebouncer({stableFrames, confidenceThreshold})` with `push(top, confidence, timestamp)`, `reset()`, and read-only `state`, following the five rules in the design; `none` or low confidence resets; a different qualifying label starts a new run of length one; fire exactly when length first reaches N
     - _Requirements: 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8_
 
-  - [ ] 3.3 Write property test for minimum run length
+  - [x] 3.3 Write property test for minimum run length
     - File: `src/classifier/debouncer.min-run.test.ts`; also create the shared generator `src/classifier/test-support/frame-sequences.ts` (arrays of `{label, confidence, timestamp}`, `stableFrames` in 2..30, biased toward long runs, threshold-exact confidences, and `none` frames)
     - **Property 1: No fire without a long enough run**
     - **Validates: Requirements 10.2, 11.2**
 
-  - [ ] 3.4 Write property test for rapid alternation
+  - [x] 3.4 Write property test for rapid alternation
     - File: `src/classifier/debouncer.alternation.test.ts`
     - **Property 2: Rapid alternation never fires**
     - **Validates: Requirements 10.8, 11.3**
 
-  - [ ] 3.5 Write property test for run reset
+  - [x] 3.5 Write property test for run reset
     - File: `src/classifier/debouncer.reset.test.ts`
     - **Property 3: `none` and low-confidence frames reset the run**
     - **Validates: Requirements 10.6, 10.7, 11.4**
 
-  - [ ] 3.6 Write property test for single fire per run
+  - [x] 3.6 Write property test for single fire per run
     - File: `src/classifier/debouncer.single-fire.test.ts`
     - **Property 4: Exactly one fire per unbroken stable run**
     - **Validates: Requirements 10.4, 10.5, 11.5**
 
-  - [ ] 3.7 Write property test for event content
+  - [x] 3.7 Write property test for event content
     - File: `src/classifier/debouncer.event-content.test.ts`
     - **Property 5: Fired event matches its run**
     - **Validates: Requirements 10.3, 11.6**
