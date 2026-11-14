@@ -1,5 +1,18 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "2.2 Write property test for label encoding": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679053366
+    },
+    "2.4 Write property test for feature vector layout": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679303084
+    },
+    "2.6 Write property test for metadata round trip": {
+      "status": "passed",
+      "lastRunTimestamp": 1794679438135
+    }
+  },
   "executionHistory": {
     "1.1 Move FeatureExtractor and MaskGenerator into `src/vision/`": [
       {
@@ -78,6 +91,105 @@
         "executionId": "641154ac-7d88-4ea4-894b-7b0e0c791ec8",
         "chatSessionId": "sess_79c59ab4-d424-45b2-91a1-fca5b5f48abc",
         "timestamp": 1794510107438
+      }
+    ],
+    "2.1 Implement `labels.ts`": [
+      {
+        "executionId": "036e1e84-d11f-4e81-bcf6-394b588ab49a",
+        "chatSessionId": "sess_6bc07f40-a0bb-4aa7-8c8b-1c4f459e7a11",
+        "timestamp": 1794678532437
+      },
+      {
+        "executionId": "036e1e84-d11f-4e81-bcf6-394b588ab49a",
+        "chatSessionId": "sess_6bc07f40-a0bb-4aa7-8c8b-1c4f459e7a11",
+        "timestamp": 1794678568413
+      },
+      {
+        "executionId": "7ff01bfc-0054-4ce1-b7ba-a445d17ce16c",
+        "chatSessionId": "sess_b16da842-1d27-4e22-9180-4b0b2377b14d",
+        "timestamp": 1794678574810
+      },
+      {
+        "executionId": "b5100443-951a-4871-a169-2919b80011a2",
+        "chatSessionId": "sess_6bc07f40-a0bb-4aa7-8c8b-1c4f459e7a11",
+        "timestamp": 1794678877942
+      },
+      {
+        "executionId": "28d77767-db24-423f-a1b0-6014dd88af8f",
+        "chatSessionId": "sess_531a5a14-2f14-4f08-89dc-aa18009b7484",
+        "timestamp": 1794678885838
+      },
+      {
+        "executionId": "e0ebfb20-ebbe-42b3-b361-417bbc8be024",
+        "chatSessionId": "sess_6bc07f40-a0bb-4aa7-8c8b-1c4f459e7a11",
+        "timestamp": 1794678977317
+      }
+    ],
+    "2.2 Write property test for label encoding": [
+      {
+        "executionId": "0b88e7f5-687c-46bd-8411-34cabccb68fc",
+        "chatSessionId": "sess_c0be6ea9-c9f8-4020-a19c-15cbeaef4743",
+        "timestamp": 1794679002502
+      },
+      {
+        "executionId": "0b88e7f5-687c-46bd-8411-34cabccb68fc",
+        "chatSessionId": "sess_c0be6ea9-c9f8-4020-a19c-15cbeaef4743",
+        "timestamp": 1794679061864
+      }
+    ],
+    "2.3 Implement `feature-vector.ts` and `mask-input.ts`": [
+      {
+        "executionId": "76f6ca5c-9abf-490b-a774-3359ec8255ce",
+        "chatSessionId": "sess_3740c5eb-7ce5-4267-a04f-3d04d6608a31",
+        "timestamp": 1794679116978
+      },
+      {
+        "executionId": "76f6ca5c-9abf-490b-a774-3359ec8255ce",
+        "chatSessionId": "sess_3740c5eb-7ce5-4267-a04f-3d04d6608a31",
+        "timestamp": 1794679193446
+      }
+    ],
+    "2.4 Write property test for feature vector layout": [
+      {
+        "executionId": "4f7fe162-4163-4691-8f0a-9bc1d697b989",
+        "chatSessionId": "sess_f4121aef-8bd5-4a52-bc60-1e104f05bcf3",
+        "timestamp": 1794679237171
+      },
+      {
+        "executionId": "4f7fe162-4163-4691-8f0a-9bc1d697b989",
+        "chatSessionId": "sess_f4121aef-8bd5-4a52-bc60-1e104f05bcf3",
+        "timestamp": 1794679310385
+      }
+    ],
+    "2.5 Implement `metadata.ts`": [
+      {
+        "executionId": "73eaf722-87fa-4eec-adba-9dcd6478e6ef",
+        "chatSessionId": "sess_7cf4b742-48c5-48d5-b69a-c3f69a9f5c53",
+        "timestamp": 1794679345458
+      },
+      {
+        "executionId": "73eaf722-87fa-4eec-adba-9dcd6478e6ef",
+        "chatSessionId": "sess_7cf4b742-48c5-48d5-b69a-c3f69a9f5c53",
+        "timestamp": 1794679383120
+      }
+    ],
+    "2. Shared pure helpers in `src/classifier/`": [
+      {
+        "executionId": "73eaf722-87fa-4eec-adba-9dcd6478e6ef",
+        "chatSessionId": "sess_7cf4b742-48c5-48d5-b69a-c3f69a9f5c53",
+        "timestamp": 1794679383217
+      }
+    ],
+    "2.6 Write property test for metadata round trip": [
+      {
+        "executionId": "0ce2740a-e769-4558-9705-c0a1af39b318",
+        "chatSessionId": "sess_5060cf2a-1b6e-45db-b54f-c4f84aca2961",
+        "timestamp": 1794679395905
+      },
+      {
+        "executionId": "0ce2740a-e769-4558-9705-c0a1af39b318",
+        "chatSessionId": "sess_5060cf2a-1b6e-45db-b54f-c4f84aca2961",
+        "timestamp": 1794679446535
       }
     ]
   }

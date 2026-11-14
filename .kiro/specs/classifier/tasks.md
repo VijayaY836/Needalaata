@@ -66,31 +66,31 @@ Use the TensorFlow.js docs (Context7 `/websites/js_tensorflow_api`) before using
     - Record the outcome in `KIRO_LOG.md` (works / does not work). If it does not work, the documented fallback applies in task 8.5: parse `model.json` and use `tf.io.getWeightSpecs`, `tf.io.getModelArtifactsForJSONSync`, and `tf.io.fromMemory`, and record that the HTTP path-resolution step is then not exercised
     - _Requirements: 7.4, 7.8_
 
-- [ ] 2. Shared pure helpers in `src/classifier/`
-  - [ ] 2.1 Implement `labels.ts`
+- [x] 2. Shared pure helpers in `src/classifier/`
+  - [x] 2.1 Implement `labels.ts`
     - `labelToIndex`, `indexToLabel` (throws `RangeError` outside 0..6), `LABEL_COUNT`, re-export `LABELS`
     - _Requirements: 11.8, Design "Shared pure helpers"_
 
-  - [ ] 2.2 Write property test for label encoding
+  - [x] 2.2 Write property test for label encoding
     - File: `src/classifier/labels.test.ts`
     - **Property 8: Label encoding round trip**
     - **Validates: Requirements 11.8**
     - fast-check, at least 100 runs, tag `// Feature: classifier, Property 8: ...`
 
-  - [ ] 2.3 Implement `feature-vector.ts` and `mask-input.ts`
+  - [x] 2.3 Implement `feature-vector.ts` and `mask-input.ts`
     - `FEATURE_VECTOR_LENGTH = 131`; `buildFeatureVector(ExtractedFeatures)` with layout slot0 normalized, slot1 normalized, two presence flags, three offset values; `maskToFloat` divides bytes by 255
     - _Requirements: 5.1, 5.2, 5.4_
 
-  - [ ]* 2.4 Write property test for feature vector layout
+  - [x] 2.4 Write property test for feature vector layout
     - File: `src/classifier/feature-vector.test.ts`
     - **Property 13: Feature vector layout is fixed**
     - **Validates: Requirements 5.1, 5.2**
 
-  - [ ] 2.5 Implement `metadata.ts`
+  - [x] 2.5 Implement `metadata.ts`
     - `ModelMetadata`, `parseModelMetadata` (reject label mismatch, unknown input type, shape/type mismatch, non-finite accuracy, with named `MetadataError` reasons), `serializeModelMetadata`
     - _Requirements: 7.2, 9.9_
 
-  - [ ]* 2.6 Write property test for metadata round trip
+  - [x] 2.6 Write property test for metadata round trip
     - File: `src/classifier/metadata.test.ts`
     - **Property 21: Model metadata round trip**
     - **Validates: Requirements 7.2, 9.9**
